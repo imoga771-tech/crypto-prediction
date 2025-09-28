@@ -1,0 +1,313 @@
+{% extends 'base.html' %}
+
+{% block title %}التنبؤ بأسعار العملات الرقمية{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">الرئيسية</a></li>
+                <li class="breadcrumb-item active">التنبؤ بالأسعار</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0"><i class="fas fa-chart-line me-2"></i>التنبؤ بأسعار العملات الرقمية</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" class="row g-3">
+                    <div class="col-md-3">
+                        <label for="symbol" class="form-label">اختر العملة</label>
+                        <select class="form-select select2" id="symbol" name="symbol" required>
+                            <option value="" selected disabled>اختر العملة</option>
+                            {% for symbol, crypto in crypto_data.items() %}
+                            <option value="{{ symbol }}" {% if request.args.get('symbol') == symbol or (prediction_data and prediction_data.symbol == symbol) %}selected{% endif %}>
+                                {{ crypto.name }} ({{ symbol }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label for="days" class="form-label">عدد الأيام للتنبؤ</label>
+                        <input type="number" class="form-control" id="days" name="days" min="1" max="365" value="{{ prediction_data.days if prediction_data else 30 }}" required>
+                    </div>
+                    
+                    <div class="col-md-2">
+                        <label for="currency" class="form-label">العملة</label>
+                        <select class="form-select" id="currency" name="currency">
+                            {% for code, name in fiat_currencies.items() %}
+                            <option value="{{ code }}" {% if (prediction_data and prediction_data.currency == code) or (not prediction_data and code == 'USD') %}selected{% endif %}>
+                                {{ name }} ({{ code }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="model_type" class="form-label">نموذج التنبؤ</label>
+                        <select class="form-select" id="model_type" name="model_type">
+                            {% for model_code, model_name in model_types.items() %}
+                            <option value="{{ model_code }}" {% if (prediction_data and prediction_data.model_type == model_code) or (not prediction_data and model_code == 'ensemble') %}selected{% endif %}>
+                                {{ model_name }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">
+                            <i class="fas fa-info-circle me-1"></i>النموذج المجمع يجمع بين عدة نماذج للحصول على أفضل النتائج
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-chart-line me-2"></i>التنبؤ بالسعر
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if prediction_data %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">نتائج التنبؤ لـ {{ prediction_data.name }} ({{ prediction_data.symbol }})</h4>
+                <span class="badge bg-light text-dark">{{ prediction_data.model_name }}</span>
+            </div>
+            <div class="card-body">
+                <div id="prediction-chart" class="chart-container plotly-chart mb-4"></div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-4">
+                        <div class="card h-100">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">ملخص التنبؤ</h5>
+                            </div>
+                            <div class="card-body">
+                                <ul class="list-group">
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        العملة
+                                        <span>{{ prediction_data.name }} ({{ prediction_data.symbol }})</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        فترة التنبؤ
+                                        <span>{{ prediction_data.days }} يوم</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        نموذج التنبؤ
+                                        <span>{{ prediction_data.model_name }}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        السعر الحالي
+                                        <span>{{ prediction_data.currency }} {{ "%.2f"|format(crypto_data[prediction_data.symbol].current_price) }}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        السعر المتوقع (نهاية الفترة)
+                                        <span>{{ prediction_data.currency }} {{ "%.2f"|format(prediction_data.predictions[-1].predicted_price_converted) }}</span>
+                                    </li>
+                                    <li class="list-group-item d-flex justify-content-between align-items-center">
+                                        نسبة التغير المتوقعة
+                                        {% set change_pct = (prediction_data.predictions[-1].predicted_price_converted / crypto_data[prediction_data.symbol].current_price - 1) * 100 %}
+                                        <span class="{{ 'text-success' if change_pct > 0 else 'text-danger' }}">
+                                            <i class="fas {{ 'fa-arrow-up' if change_pct > 0 else 'fa-arrow-down' }}"></i>
+                                            {{ "%.2f"|format(change_pct|abs) }}%
+                                        </span>
+                                    </li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-8">
+                        <div class="card h-100">
+                            <div class="card-header bg-primary text-white">
+                                <h5 class="mb-0">توقعات الأسعار</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="table-responsive">
+                                    <table class="table table-striped table-hover">
+                                        <thead>
+                                            <tr>
+                                                <th>التاريخ</th>
+                                                <th>السعر المتوقع ({{ prediction_data.currency }})</th>
+                                                <th>التغير اليومي</th>
+                                                <th>التغير التراكمي</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {% for pred in prediction_data.predictions %}
+                                            <tr>
+                                                <td>{{ pred.date.strftime('%Y-%m-%d') }}</td>
+                                                <td>{{ "%.2f"|format(pred.predicted_price_converted) }}</td>
+                                                <td>
+                                                    {% if loop.index > 1 %}
+                                                        {% set daily_change = (pred.predicted_price_converted / prediction_data.predictions[loop.index0-1].predicted_price_converted - 1) * 100 %}
+                                                        <span class="{{ 'text-success' if daily_change > 0 else 'text-danger' if daily_change < 0 else 'text-secondary' }}">
+                                                            <i class="fas {{ 'fa-arrow-up' if daily_change > 0 else 'fa-arrow-down' if daily_change < 0 else 'fa-equals' }}"></i>
+                                                            {{ "%.2f"|format(daily_change|abs) }}%
+                                                        </span>
+                                                    {% else %}
+                                                        -
+                                                    {% endif %}
+                                                </td>
+                                                <td>
+                                                    {% set cumulative_change = (pred.predicted_price_converted / crypto_data[prediction_data.symbol].current_price - 1) * 100 %}
+                                                    <span class="{{ 'text-success' if cumulative_change > 0 else 'text-danger' if cumulative_change < 0 else 'text-secondary' }}">
+                                                        <i class="fas {{ 'fa-arrow-up' if cumulative_change > 0 else 'fa-arrow-down' if cumulative_change < 0 else 'fa-equals' }}"></i>
+                                                        {{ "%.2f"|format(cumulative_change|abs) }}%
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                            {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="alert alert-info">
+                    <i class="fas fa-info-circle me-2"></i>
+                    <strong>ملاحظة:</strong> هذه التنبؤات تستند إلى نماذج التعلم الآلي وهي للأغراض التعليمية فقط. أسعار العملات الرقمية متقلبة للغاية وتتأثر بعوامل كثيرة لا يمكن التنبؤ بها بدقة. لا ينبغي استخدام هذه التنبؤات لاتخاذ قرارات استثمارية.
+                </div>
+                
+                <div class="d-flex justify-content-center mt-4">
+                    <a href="/technical/{{ prediction_data.symbol }}" class="btn btn-primary mx-2">
+                        <i class="fas fa-chart-bar me-2"></i>التحليل الفني
+                    </a>
+                    <a href="/convert?from_currency={{ prediction_data.symbol }}" class="btn btn-success mx-2">
+                        <i class="fas fa-exchange-alt me-2"></i>تحويل العملة
+                    </a>
+                    <a href="/compare?symbols={{ prediction_data.symbol }}" class="btn btn-info mx-2">
+                        <i class="fas fa-balance-scale me-2"></i>مقارنة مع عملات أخرى
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-brain me-2"></i>نماذج التنبؤ المتقدمة</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6" data-aos="fade-up">
+                        <h5><i class="fas fa-cogs me-2" style="color: var(--primary-color);"></i>آلية التنبؤ المتقدمة</h5>
+                        <p>يستخدم نظام التنبؤ مجموعة من نماذج التعلم الآلي المتقدمة لتحليل البيانات التاريخية للعملة وتوقع الأسعار المستقبلية. يتم دمج المؤشرات الفنية والعوامل المؤثرة في النماذج للحصول على تنبؤات أكثر دقة.</p>
+                        
+                        <h6 class="mt-3">النماذج المستخدمة:</h6>
+                        <ul>
+                            <li><strong>الانحدار الخطي (Linear Regression):</strong> نموذج بسيط يحدد العلاقة الخطية بين المتغيرات.</li>
+                            <li><strong>الغابات العشوائية (Random Forest):</strong> نموذج متقدم يجمع بين عدة أشجار قرار للحصول على تنبؤات أكثر دقة.</li>
+                            <li><strong>آلة المتجهات الداعمة (SVR):</strong> نموذج قوي للتعامل مع البيانات غير الخطية والمعقدة.</li>
+                            <li><strong>الشبكات العصبية LSTM:</strong> نموذج متقدم للتعامل مع السلاسل الزمنية والأنماط المعقدة.</li>
+                            <li><strong>النموذج المجمع (Ensemble):</strong> يجمع بين نتائج النماذج المختلفة للحصول على أفضل النتائج.</li>
+                        </ul>
+                    </div>
+                    <div class="col-md-6" data-aos="fade-up" data-aos-delay="100">
+                        <h5><i class="fas fa-chart-bar me-2" style="color: var(--success-color);"></i>المؤشرات الفنية المستخدمة</h5>
+                        <p>يتم دمج مجموعة من المؤشرات الفنية في نماذج التنبؤ لتحسين الدقة وفهم اتجاهات السوق بشكل أفضل:</p>
+                        
+                        <div class="row">
+                            <div class="col-md-6">
+                                <ul>
+                                    <li><strong>المتوسطات المتحركة (MA):</strong> لتحديد الاتجاهات العامة للسعر.</li>
+                                    <li><strong>مؤشر القوة النسبية (RSI):</strong> لتحديد حالات ذروة الشراء وذروة البيع.</li>
+                                    <li><strong>مؤشر MACD:</strong> لتحديد تغيرات الزخم واتجاه السعر.</li>
+                                    <li><strong>نطاقات بولينجر:</strong> لقياس تقلب السعر وتحديد مستويات الدعم والمقاومة.</li>
+                                </ul>
+                            </div>
+                            <div class="col-md-6">
+                                <ul>
+                                    <li><strong>مؤشر تدفق الأموال (MFI):</strong> لتحليل حجم التداول مع تغيرات السعر.</li>
+                                    <li><strong>مؤشر القناة السعرية:</strong> لتحديد نطاقات تداول السعر.</li>
+                                    <li><strong>مؤشر الزخم:</strong> لقياس سرعة تغير السعر.</li>
+                                    <li><strong>مؤشر ستوكاستيك:</strong> لتحديد نقاط التحول المحتملة في السوق.</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <hr class="my-4">
+                
+                <div class="row mt-3">
+                    <div class="col-md-3 text-center" data-aos="fade-up" data-aos-delay="200">
+                        <div class="p-3">
+                            <i class="fas fa-history fa-3x mb-3" style="color: var(--primary-color);"></i>
+                            <h5>تحليل البيانات التاريخية</h5>
+                            <p>تحليل شامل لأنماط الأسعار السابقة والمؤشرات الفنية لفهم سلوك العملة</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center" data-aos="fade-up" data-aos-delay="300">
+                        <div class="p-3">
+                            <i class="fas fa-brain fa-3x mb-3" style="color: var(--success-color);"></i>
+                            <h5>نماذج التعلم الآلي المتقدمة</h5>
+                            <p>استخدام مجموعة من الخوارزميات المتقدمة لاكتشاف الأنماط المعقدة والتنبؤ بالاتجاهات</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center" data-aos="fade-up" data-aos-delay="400">
+                        <div class="p-3">
+                            <i class="fas fa-chart-line fa-3x mb-3" style="color: var(--danger-color);"></i>
+                            <h5>التنبؤ المستقبلي</h5>
+                            <p>توقع أسعار العملة للفترة المحددة مع تقدير نطاقات الثقة وتحليل المخاطر</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center" data-aos="fade-up" data-aos-delay="500">
+                        <div class="p-3">
+                            <i class="fas fa-balance-scale fa-3x mb-3" style="color: var(--info-color);"></i>
+                            <h5>تقييم النموذج</h5>
+                            <p>تقييم دقة النماذج باستمرار وتحسينها للحصول على أفضل النتائج الممكنة</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // تهيئة Select2
+        $('.select2').select2({
+            dir: "rtl",
+            language: "ar",
+            placeholder: "اختر العملة",
+            width: '100%'
+        });
+    });
+</script>
+
+{% if chart_json %}
+<script>
+    // رسم بياني للتنبؤات
+    var predictionChartData = {{ chart_json|safe }};
+    var cfg = {responsive: true, displayModeBar: false};
+    Plotly.newPlot('prediction-chart', predictionChartData.data, predictionChartData.layout, cfg);
+    
+    // جعل الرسم البياني متجاوب
+    window.addEventListener('resize', function() {
+        Plotly.relayout('prediction-chart', {
+            'xaxis.autorange': true,
+            'yaxis.autorange': true
+        });
+    });
+</script>
+{% endif %}
+{% endblock %}

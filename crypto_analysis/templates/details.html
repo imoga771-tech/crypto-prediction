@@ -1,0 +1,295 @@
+{% extends 'base.html' %}
+
+{% block title %}عالم العملات الرقمية - تفاصيل{% endblock %}
+
+{% block extra_css %}
+<style>
+  .hero-section {
+    background: linear-gradient(135deg, var(--primary-color), var(--info-color));
+    color: #fff;
+    border-radius: 16px;
+    overflow: hidden;
+  }
+  .hero-section .overlay {
+    background: radial-gradient(circle at 20% 20%, rgba(255,255,255,0.2), transparent 40%),
+                radial-gradient(circle at 80% 0%, rgba(255,255,255,0.15), transparent 35%);
+  }
+  .stat-chip {
+    background: rgba(255,255,255,0.15);
+    color: #fff;
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 12px;
+  }
+  .coin-card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    transition: transform .2s ease, box-shadow .2s ease;
+  }
+  .coin-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 14px 32px rgba(0,0,0,0.12);
+  }
+  .coin-meta small { color: #6c757d; }
+  .tag {
+    display: inline-block;
+    padding: 2px 8px;
+    border-radius: 10px;
+    font-size: 0.75rem;
+    background: rgba(0,0,0,0.05);
+  }
+  .feature-tile {
+    border-radius: 14px;
+    border: 1px solid #eee;
+    transition: background .2s ease;
+    height: 100%;
+  }
+  .feature-tile:hover { background: rgba(0,0,0,0.02); }
+  .member-card {
+    border: none;
+    border-radius: 16px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.08);
+    height: 100%;
+  }
+  .member-avatar {
+    width: 72px; height: 72px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    display: inline-flex; align-items: center; justify-content: center; color: #fff;
+  }
+  .badge-soft { background: rgba(52,152,219,0.12); color: #2476a5; }
+  .badge-soft-success { background: rgba(46,204,113,0.12); color: #1e9e58; }
+  .badge-soft-warning { background: rgba(243,156,18,0.12); color: #b46c0f; }
+  .badge-soft-secondary { background: rgba(108,117,125,0.12); color: #4b4f53; }
+  .supervisor-card{
+    background: linear-gradient(135deg, #0f3460, #1a5fb4);
+    color:#fff; border-radius:16px; box-shadow:0 8px 24px rgba(0,0,0,.15);
+  }
+  .supervisor-avatar{
+    width:82px; height:82px; border-radius:50%; background: rgba(255,255,255,0.15);
+    display:flex; align-items:center; justify-content:center; font-size:2rem;
+  }
+</style>
+{% endblock %}
+
+{% macro symbol_color(sym) -%}
+  {%- if sym == 'BTC' -%}#F7931A
+  {%- elif sym == 'ETH' -%}#627EEA
+  {%- elif sym == 'BNB' -%}#F3BA2F
+  {%- elif sym == 'DOGE' -%}#C2A633
+  {%- elif sym == 'SOL' -%}#00FFA3
+  {%- elif sym == 'XRP' -%}#23292F
+  {%- elif sym == 'ADA' -%}#0033AD
+  {%- elif sym == 'AVAX' -%}#E84142
+  {%- elif sym == 'LINK' -%}#2A5ADA
+  {%- elif sym == 'LTC' -%}#BFBBBB
+  {%- elif sym == 'BCH' -%}#8DC351
+  {%- elif sym == 'TRX' -%}#EF0027
+  {%- elif sym == 'DOT' -%}#E6007A
+  {%- elif sym == 'LEO' -%}#FCB500
+  {%- elif sym == 'TON' -%}#1DA1F2
+  {%- elif sym == 'SHIB' -%}#F5A623
+  {%- else -%}#6c757d{%- endif -%}
+{%- endmacro %}
+
+{% macro tech_icon(tech) -%}
+  {%- if 'Flask' in tech -%}fa-fire
+  {%- elif 'Pandas' in tech -%}fa-table
+  {%- elif 'Plotly' in tech -%}fa-chart-line
+  {%- elif 'Bootstrap' in tech -%}fa-layer-group
+  {%- elif 'Select2' in tech -%}fa-list
+  {%- elif 'jQuery' in tech -%}fa-bolt
+  {%- else -%}fa-check-circle{%- endif -%}
+{%- endmacro %}
+
+{% block content %}
+<div class="hero-section mb-4 animate__animated animate__fadeIn">
+  <div class="overlay p-4 p-md-5">
+    <div class="row align-items-center g-3">
+      <div class="col-lg-8">
+        <h2 class="mb-2"><i class="fas fa-info-circle me-2"></i>تفاصيل المشروع</h2>
+        <p class="mb-3 mb-lg-4">منصة "عالم العملات الرقمية" تعرض بيانات تاريخية وحالية لعملات رقمية مختارة، مع أدوات للتنبؤ، التحويل، والمقارنة. تعتمد على CSV محلية مع تعزيز من واجهات برمجية موثوقة.</p>
+        <div class="d-flex flex-wrap gap-2">
+          <span class="stat-chip px-3 py-2"><i class="fas fa-coins me-2"></i>عدد العملات: {{ coins_stats|length }}</span>
+          <span class="stat-chip px-3 py-2"><i class="fas fa-database me-2"></i>إجمالي السجلات: {{ coins_stats|map(attribute='rows')|sum }}</span>
+          <span class="stat-chip px-3 py-2"><i class="fas fa-table me-2"></i>متوسط الأعمدة: {{ (coins_stats|map(attribute='cols')|sum // (coins_stats|length if coins_stats|length>0 else 1)) }}</span>
+        </div>
+      </div>
+      <div class="col-lg-4">&nbsp;</div>
+    </div>
+  </div>
+  </div>
+
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h4 class="mb-0"><i class="fas fa-coins me-2"></i>العملات المتوفرة وإحصائيات البيانات</h4>
+     <span class="text-muted small"> </span>
+    </div>
+    <div class="row row-cols-1 row-cols-sm-2 row-cols-lg-3 row-cols-xl-4 g-3">
+      {% for c in coins_stats %}
+      <div class="col">
+        <div class="card coin-card h-100" data-aos="fade-up" data-aos-delay="{{ loop.index * 30 }}">
+          <div class="card-body">
+            <div class="d-flex justify-content-between align-items-start mb-2">
+              <div>
+                <div class="d-flex align-items-center gap-2">
+                  <span class="badge" style="background-color: {{ symbol_color(c.symbol) }}; color: #fff;">{{ c.symbol }}</span>
+                  <h6 class="mb-0">{{ c.name }}</h6>
+                </div>
+                <div class="coin-meta mt-1">
+                  <small><i class="fas fa-calendar-day me-1"></i>{{ c.date_min if c.date_min else '-' }}</small>
+                  <small class="ms-2"><i class="fas fa-calendar-check me-1"></i>{{ c.date_max if c.date_max else '-' }}</small>
+                </div>
+              </div>
+              <span class="tag"><i class="fas fa-database me-1"></i>{{ c.cols }} عمود</span>
+            </div>
+            <div class="mt-2">
+              <div class="d-flex justify-content-between align-items-center">
+                <div class="text-muted small">عدد الصفوف</div>
+                <div class="fw-bold">{{ c.rows }}</div>
+              </div>
+              <div class="progress mt-2" style="height: 6px;">
+                <div class="progress-bar" role="progressbar" style="width: {{ (c.rows / (coins_stats|map(attribute='rows')|max if coins_stats|length>0 else 1)) * 100 }}%"></div>
+              </div>
+            </div>
+          </div>
+          <div class="card-footer bg-transparent d-flex justify-content-end">
+            <a class="btn btn-sm btn-outline-primary" href="/crypto/{{ c.symbol }}"><i class="fas fa-info-circle me-1"></i>تفاصيل العملة</a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+  </div>
+  </div>
+
+<div class="row mb-4">
+  <div class="col-md-6 mb-4 mb-md-0">
+    <div class="card h-100">
+      <div class="card-header">
+        <h4 class="mb-0"><i class="fas fa-tools me-2"></i>التقنيات واللغات المستخدمة</h4>
+      </div>
+      <div class="card-body">
+        <div class="row row-cols-1 row-cols-md-2 g-3">
+          {% for tech in tech_stack %}
+          <div class="col">
+            <div class="feature-tile p-3">
+              <div class="d-flex align-items-start gap-2">
+                <i class="fas {{ tech_icon(tech) }} mt-1" style="color: var(--success-color);"></i>
+                <div>
+                  <div class="fw-semibold">{{ tech }}</div>
+                  <small class="text-muted">
+                    {% if 'Flask' in tech %}إطار ويب خفيف لبناء واجهات ومسارات REST.
+                    {% elif 'Pandas' in tech %}معالجة وتحليل البيانات الجدولية وعمليات السلاسل الزمنية.
+                    {% elif 'Plotly' in tech %}إنشاء رسوم بيانية تفاعلية للويب.
+                    {% elif 'Bootstrap' in tech %}تصميم متجاوب وواجهات RTL أنيقة.
+                    {% elif 'Select2' in tech %}تحسين عناصر القوائم المنسدلة وتجربة البحث.
+                    {% else %}مكوّن أساسي ضمن بيئة المشروع.
+                    {% endif %}
+                  </small>
+                </div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="col-md-6">
+    <div class="card h-100">
+      <div class="card-header">
+        <h4 class="mb-0"><i class="fas fa-robot me-2"></i>نماذج التدريب</h4>
+      </div>
+      <div class="card-body">
+        <p class="mb-3">تدعم المنصة عدة نماذج للتنبؤ بالأسعار. تفاصيل موجزة لكل نموذج:</p>
+        <div class="row row-cols-1 row-cols-md-2 g-3">
+          {% for m in models_info %}
+          <div class="col">
+            <div class="p-3 h-100 coin-card">
+              <div class="d-flex align-items-start justify-content-between">
+                <h6 class="mb-1"><i class="fas fa-cube me-1" style="color: var(--primary-color);"></i>{{ m.name }}</h6>
+                <span class="badge bg-light text-dark">{{ m.key }}</span>
+              </div>
+              <small class="text-muted d-block mb-2">{{ m.desc }}</small>
+              
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        <div class="alert alert-info mt-3 mb-0">
+          <i class="fas fa-info-circle me-2"></i>
+          يتم تقسيم البيانات افتراضيًا إلى تدريب 80% /اختبار 20% بحسب الحاجة داخل الدوال، وقد يختلف عدد مرات التدريب حسب طول السلسلة وتوفر البيانات.
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="card">
+      <div class="card-header">
+        <h4 class="mb-0"><i class="fas fa-star me-2"></i>مميزات أخرى</h4>
+      </div>
+      <div class="card-body">
+        <div class="row">
+          <div class="col-md-4 mb-3">
+            <div class="p-3 feature-tile">
+              <h6><i class="fas fa-chart-bar me-2" style="color: var(--warning-color);"></i>التحليل الفني</h6>
+              <p class="mb-0">مؤشرات RSI, MACD, Bollinger وغيرها لعرض رؤى سريعة عن الاتجاهات والزخم.</p>
+            </div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <div class="p-3 feature-tile">
+              <h6><i class="fas fa-balance-scale me-2" style="color: var(--info-color);"></i>المقارنة</h6>
+              <p class="mb-0">مقارنة الأداء والتقلب والارتباط والمخاطر بين عدة عملات في فترات مختلفة.</p>
+            </div>
+          </div>
+          <div class="col-md-4 mb-3">
+            <div class="p-3 feature-tile">
+              <h6><i class="fas fa-exchange-alt me-2" style="color: var(--primary-color);"></i>التحويل</h6>
+              <p class="mb-0">تحويل بين العملات الرقمية والتقليدية مع أسعار صرف محدثة.</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="row mb-4">
+  <div class="col-12">
+    <div class="d-flex justify-content-between align-items-center mb-2">
+      <h4 class="mb-0"><i class="fas fa-users me-2"></i>فريق العمل</h4>
+      <span class="text-muted small"> </span>
+    </div>
+    <div class="row row-cols-2 row-cols-md-2 row-cols-lg-4 g-3">
+      {% for member in team %}
+      <div class="col">
+        <div class="member-card p-3" data-aos="fade-up" data-aos-delay="{{ loop.index * 50 }}">
+          <div class="d-flex align-items-center gap-3">
+            <div class="member-avatar">
+              <i class="fas fa-user"></i>
+            </div>
+            <div>
+              <div class="fw-semibold">{{ member.name }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    <div class="supervisor-card p-4 mt-3">
+      <div class="d-flex align-items-center gap-3">
+        <div class="supervisor-avatar"><i class="fas fa-user-tie"></i></div>
+        <div>
+          <div class="h5 mb-1">إشراف الدكتور</div>
+          <div class="fs-5 fw-bold">{{ supervisor }}</div>
+          <small class="d-block mt-1" style="opacity:.9">شكر خاص للمشرف على التوجيه والمتابعة</small>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

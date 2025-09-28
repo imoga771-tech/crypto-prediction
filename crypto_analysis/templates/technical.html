@@ -1,0 +1,383 @@
+{% extends 'base.html' %}
+
+{% block title %}التحليل الفني لـ {{ crypto.name }}{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">الرئيسية</a></li>
+                <li class="breadcrumb-item"><a href="/crypto/{{ crypto.symbol }}">{{ crypto.name }}</a></li>
+                <li class="breadcrumb-item active">التحليل الفني</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card h-100 animate__animated animate__fadeIn">
+            <div class="card-header" style="background-color: {{ crypto.color }};">
+                <h4 class="mb-0 text-white">{{ crypto.name }} ({{ crypto.symbol }})</h4>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    {% if crypto.image %}
+                    <img src="{{ crypto.image }}" alt="{{ crypto.name }}" class="img-fluid mb-3" style="max-height: 80px;">
+                    {% else %}
+                    <i class="fas fa-coins fa-4x mb-3" style="color: {{ crypto.color }};"></i>
+                    {% endif %}
+                    <h2>${{ "%.2f"|format(crypto.current_price) }}</h2>
+                    
+                    <div class="mt-2">
+                        {% if crypto.price_change > 0 %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-arrow-up me-1"></i>{{ "%.2f"|format(crypto.price_change) }}%
+                        </span>
+                        {% elif crypto.price_change < 0 %}
+                        <span class="badge bg-danger">
+                            <i class="fas fa-arrow-down me-1"></i>{{ "%.2f"|format(crypto.price_change|abs) }}%
+                        </span>
+                        {% else %}
+                        <span class="badge bg-secondary">
+                            <i class="fas fa-equals me-1"></i>0.00%
+                        </span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <div class="indicator {{ 'indicator-buy' if technical_analysis.summary.signal == 'شراء' else 'indicator-sell' if technical_analysis.summary.signal == 'بيع' else 'indicator-neutral' }}">
+                    <h5 class="mb-3">ملخص التحليل الفني</h5>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>الاتجاه العام:</span>
+                        <strong>{{ technical_analysis.summary.trend }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>قوة الإشارة:</span>
+                        <strong>{{ "%.0f"|format(technical_analysis.summary.strength) }}%</strong>
+                    </div>
+                    <div class="progress mb-3">
+                        <div class="progress-bar {{ 'bg-success' if technical_analysis.summary.signal == 'شراء' else 'bg-danger' if technical_analysis.summary.signal == 'بيع' else 'bg-primary' }}" role="progressbar" style="width: {{ technical_analysis.summary.strength }}%" aria-valuenow="{{ technical_analysis.summary.strength }}" aria-valuemin="0" aria-valuemax="100"></div>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>إشارات الشراء:</span>
+                        <strong>{{ technical_analysis.summary.buy_signals }}/{{ technical_analysis.summary.total_indicators }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>إشارات البيع:</span>
+                        <strong>{{ technical_analysis.summary.sell_signals }}/{{ technical_analysis.summary.total_indicators }}</strong>
+                    </div>
+                    <div class="d-flex justify-content-between mb-2">
+                        <span>الإشارة:</span>
+                        <strong class="{{ 'text-success' if technical_analysis.summary.signal == 'شراء' else 'text-danger' if technical_analysis.summary.signal == 'بيع' else 'text-primary' }}">{{ technical_analysis.summary.signal }}</strong>
+                    </div>
+                </div>
+                
+                <div class="d-grid gap-2 mt-4">
+                    <a href="/predict?symbol={{ crypto.symbol }}" class="btn btn-primary">
+                        <i class="fas fa-chart-line me-2"></i>التنبؤ بالسعر
+                    </a>
+                    <a href="/crypto/{{ crypto.symbol }}" class="btn btn-info">
+                        <i class="fas fa-info-circle me-2"></i>تفاصيل العملة
+                    </a>
+                    <a href="/convert?from_currency={{ crypto.symbol }}" class="btn btn-success">
+                        <i class="fas fa-exchange-alt me-2"></i>تحويل العملة
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="technicalTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="ma-tab" data-bs-toggle="tab" data-bs-target="#ma-tab-pane" type="button" role="tab" aria-controls="ma-tab-pane" aria-selected="true">
+                            <i class="fas fa-chart-line me-1"></i>المتوسطات المتحركة
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="bollinger-tab" data-bs-toggle="tab" data-bs-target="#bollinger-tab-pane" type="button" role="tab" aria-controls="bollinger-tab-pane" aria-selected="false">
+                            <i class="fas fa-chart-area me-1"></i>نطاقات بولينجر
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="rsi-tab" data-bs-toggle="tab" data-bs-target="#rsi-tab-pane" type="button" role="tab" aria-controls="rsi-tab-pane" aria-selected="false">
+                            <i class="fas fa-chart-bar me-1"></i>مؤشر القوة النسبية
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="macd-tab" data-bs-toggle="tab" data-bs-target="#macd-tab-pane" type="button" role="tab" aria-controls="macd-tab-pane" aria-selected="false">
+                            <i class="fas fa-chart-bar me-1"></i>مؤشر MACD
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="stochastic-tab" data-bs-toggle="tab" data-bs-target="#stochastic-tab-pane" type="button" role="tab" aria-controls="stochastic-tab-pane" aria-selected="false">
+                            <i class="fas fa-chart-bar me-1"></i>مؤشر ستوكاستيك
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="technicalTabsContent">
+                    <div class="tab-pane fade show active" id="ma-tab-pane" role="tabpanel" aria-labelledby="ma-tab" tabindex="0">
+                        <div id="ma-chart" class="chart-container plotly-chart"></div>
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <span>المتوسطات المتحركة هي مؤشرات فنية تساعد في تحديد اتجاه السعر. عندما يكون السعر فوق المتوسط المتحرك، فإن ذلك يشير إلى اتجاه صعودي، وعندما يكون تحته، فإن ذلك يشير إلى اتجاه هبوطي.</span>
+                        </div>
+                        <div class="indicator {{ 'indicator-buy' if technical_analysis.moving_averages.signal in ['شراء', 'شراء بحذر'] else 'indicator-sell' if technical_analysis.moving_averages.signal in ['بيع', 'بيع بحذر'] else 'indicator-neutral' }}">
+                            <h5 class="mb-3">تحليل المتوسطات المتحركة</h5>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>الاتجاه:</span>
+                                <strong>{{ technical_analysis.moving_averages.trend }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>السعر الحالي:</span>
+                                <strong>${{ "%.2f"|format(technical_analysis.moving_averages.details.close) }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>SMA 7:</span>
+                                <strong>${{ "%.2f"|format(technical_analysis.moving_averages.details.sma7) }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>SMA 30:</span>
+                                <strong>${{ "%.2f"|format(technical_analysis.moving_averages.details.sma30) }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>SMA 200:</span>
+                                <strong>${{ "%.2f"|format(technical_analysis.moving_averages.details.sma200) }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>الإشارة:</span>
+                                <strong class="{{ 'text-success' if technical_analysis.moving_averages.signal in ['شراء', 'شراء بحذر'] else 'text-danger' if technical_analysis.moving_averages.signal in ['بيع', 'بيع بحذر'] else 'text-primary' }}">{{ technical_analysis.moving_averages.signal }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="bollinger-tab-pane" role="tabpanel" aria-labelledby="bollinger-tab" tabindex="0">
+                        <div id="bollinger-chart" class="chart-container plotly-chart"></div>
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <span>نطاقات بولينجر هي مؤشر فني يستخدم لقياس تقلب السعر وتحديد مستويات ذروة الشراء وذروة البيع. عندما يقترب السعر من النطاق العلوي، فقد يكون في حالة ذروة شراء، وعندما يقترب من النطاق السفلي، فقد يكون في حالة ذروة بيع.</span>
+                        </div>
+                        <div class="indicator {{ 'indicator-buy' if technical_analysis.bollinger_bands.signal in ['شراء/انتظار', 'شراء بحذر'] else 'indicator-sell' if technical_analysis.bollinger_bands.signal in ['بيع/انتظار', 'بيع بحذر'] else 'indicator-neutral' }}">
+                            <h5 class="mb-3">تحليل نطاقات بولينجر</h5>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>السعر الحالي:</span>
+                                <strong>${{ "%.2f"|format(technical_analysis.bollinger_bands.close) }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>النطاق العلوي:</span>
+                                <strong>${{ "%.2f"|format(technical_analysis.bollinger_bands.upper) }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>المتوسط:</span>
+                                <strong>${{ "%.2f"|format(technical_analysis.bollinger_bands.middle) }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>النطاق السفلي:</span>
+                                <strong>${{ "%.2f"|format(technical_analysis.bollinger_bands.lower) }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>الموقع ضمن النطاق:</span>
+                                <strong>{{ "%.0f"|format(technical_analysis.bollinger_bands.position) }}%</strong>
+                            </div>
+                            <div class="progress mb-3">
+                                <div class="progress-bar {{ 'bg-danger' if technical_analysis.bollinger_bands.position > 80 else 'bg-success' if technical_analysis.bollinger_bands.position < 20 else 'bg-primary' }}" role="progressbar" style="width: {{ technical_analysis.bollinger_bands.position }}%" aria-valuenow="{{ technical_analysis.bollinger_bands.position }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>الحالة:</span>
+                                <strong>{{ technical_analysis.bollinger_bands.condition }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>الإشارة:</span>
+                                <strong class="{{ 'text-success' if technical_analysis.bollinger_bands.signal in ['شراء/انتظار', 'شراء بحذر'] else 'text-danger' if technical_analysis.bollinger_bands.signal in ['بيع/انتظار', 'بيع بحذر'] else 'text-primary' }}">{{ technical_analysis.bollinger_bands.signal }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="rsi-tab-pane" role="tabpanel" aria-labelledby="rsi-tab" tabindex="0">
+                        <div id="rsi-chart" class="chart-container plotly-chart"></div>
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <span>مؤشر القوة النسبية (RSI) هو مؤشر زخم يقيس سرعة وتغير حركات الأسعار. يتراوح من 0 إلى 100، وعادة ما تشير القيم فوق 70 إلى حالة ذروة شراء، بينما تشير القيم تحت 30 إلى حالة ذروة بيع.</span>
+                        </div>
+                        <div class="indicator {{ 'indicator-buy' if technical_analysis.rsi.signal == 'شراء' else 'indicator-sell' if technical_analysis.rsi.signal == 'بيع' else 'indicator-neutral' }}">
+                            <h5 class="mb-3">تحليل مؤشر القوة النسبية (RSI)</h5>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>قيمة RSI:</span>
+                                <strong>{{ "%.2f"|format(technical_analysis.rsi.value) }}</strong>
+                            </div>
+                            <div class="progress mb-3">
+                                <div class="progress-bar {{ 'bg-danger' if technical_analysis.rsi.value > 70 else 'bg-success' if technical_analysis.rsi.value < 30 else 'bg-primary' }}" role="progressbar" style="width: {{ technical_analysis.rsi.value }}%" aria-valuenow="{{ technical_analysis.rsi.value }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>الحالة:</span>
+                                <strong>{{ technical_analysis.rsi.condition }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>الإشارة:</span>
+                                <strong class="{{ 'text-success' if technical_analysis.rsi.signal == 'شراء' else 'text-danger' if technical_analysis.rsi.signal == 'بيع' else 'text-primary' }}">{{ technical_analysis.rsi.signal }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="macd-tab-pane" role="tabpanel" aria-labelledby="macd-tab" tabindex="0">
+                        <div id="macd-chart" class="chart-container plotly-chart"></div>
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <span>مؤشر تقارب وتباعد المتوسطات المتحركة (MACD) هو مؤشر زخم يتبع العلاقة بين متوسطين متحركين للسعر. عندما يتجاوز MACD خط الإشارة من الأسفل إلى الأعلى، فإنه يعطي إشارة شراء، وعندما يتجاوزه من الأعلى إلى الأسفل، فإنه يعطي إشارة بيع.</span>
+                        </div>
+                        <div class="indicator {{ 'indicator-buy' if technical_analysis.macd.trend_signal in ['شراء', 'انتظار/شراء'] else 'indicator-sell' if technical_analysis.macd.trend_signal in ['بيع', 'انتظار/بيع'] else 'indicator-neutral' }}">
+                            <h5 class="mb-3">تحليل مؤشر MACD</h5>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>MACD:</span>
+                                <strong>{{ "%.2f"|format(technical_analysis.macd.macd) }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>إشارة MACD:</span>
+                                <strong>{{ "%.2f"|format(technical_analysis.macd.signal) }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>المدرج التكراري:</span>
+                                <strong class="{{ 'text-success' if technical_analysis.macd.histogram > 0 else 'text-danger' }}">{{ "%.2f"|format(technical_analysis.macd.histogram) }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>الحالة:</span>
+                                <strong>{{ technical_analysis.macd.condition }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>الإشارة:</span>
+                                <strong class="{{ 'text-success' if technical_analysis.macd.trend_signal in ['شراء', 'انتظار/شراء'] else 'text-danger' if technical_analysis.macd.trend_signal in ['بيع', 'انتظار/بيع'] else 'text-primary' }}">{{ technical_analysis.macd.trend_signal }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane fade" id="stochastic-tab-pane" role="tabpanel" aria-labelledby="stochastic-tab" tabindex="0">
+                        <div id="stochastic-chart" class="chart-container plotly-chart"></div>
+                        <div class="alert alert-info mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <span>مؤشر ستوكاستيك هو مؤشر زخم يقارن سعر الإغلاق الحالي بنطاق الأسعار خلال فترة زمنية معينة. يتكون من خطين: %K (الخط الرئيسي) و %D (المتوسط المتحرك لـ %K). القيم فوق 80 تشير إلى حالة ذروة شراء، والقيم تحت 20 تشير إلى حالة ذروة بيع.</span>
+                        </div>
+                        <div class="indicator {{ 'indicator-buy' if technical_analysis.stochastic.signal == 'شراء' else 'indicator-sell' if technical_analysis.stochastic.signal == 'بيع' else 'indicator-neutral' }}">
+                            <h5 class="mb-3">تحليل مؤشر ستوكاستيك</h5>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>%K:</span>
+                                <strong>{{ "%.2f"|format(technical_analysis.stochastic.k) }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>%D:</span>
+                                <strong>{{ "%.2f"|format(technical_analysis.stochastic.d) }}</strong>
+                            </div>
+                            <div class="progress mb-3">
+                                <div class="progress-bar {{ 'bg-danger' if technical_analysis.stochastic.k > 80 else 'bg-success' if technical_analysis.stochastic.k < 20 else 'bg-primary' }}" role="progressbar" style="width: {{ technical_analysis.stochastic.k }}%" aria-valuenow="{{ technical_analysis.stochastic.k }}" aria-valuemin="0" aria-valuemax="100"></div>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>الحالة:</span>
+                                <strong>{{ technical_analysis.stochastic.condition }}</strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-2">
+                                <span>الإشارة:</span>
+                                <strong class="{{ 'text-success' if technical_analysis.stochastic.signal == 'شراء' else 'text-danger' if technical_analysis.stochastic.signal == 'بيع' else 'text-primary' }}">{{ technical_analysis.stochastic.signal }}</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-info-circle me-2"></i>حول المؤشرات الفنية</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6" data-aos="fade-up">
+                        <h5><i class="fas fa-chart-line me-2" style="color: var(--primary-color);"></i>المتوسطات المتحركة</h5>
+                        <p>المتوسطات المتحركة هي أداة أساسية في التحليل الفني تساعد في تحديد اتجاه السعر وتصفية التقلبات قصيرة المدى. تشمل المتوسطات المتحركة المستخدمة:</p>
+                        <ul>
+                            <li><strong>SMA 7:</strong> المتوسط المتحرك البسيط لـ 7 أيام (قصير المدى)</li>
+                            <li><strong>SMA 30:</strong> المتوسط المتحرك البسيط لـ 30 يوم (متوسط المدى)</li>
+                            <li><strong>SMA 200:</strong> المتوسط المتحرك البسيط لـ 200 يوم (طويل المدى)</li>
+                        </ul>
+                        
+                        <h5 class="mt-4"><i class="fas fa-chart-area me-2" style="color: var(--success-color);"></i>نطاقات بولينجر</h5>
+                        <p>نطاقات بولينجر هي مؤشر فني يتكون من ثلاثة خطوط: المتوسط المتحرك البسيط لـ 20 يوم، والنطاق العلوي (المتوسط + انحرافين معياريين)، والنطاق السفلي (المتوسط - انحرافين معياريين). تستخدم لقياس تقلب السعر وتحديد مستويات ذروة الشراء وذروة البيع.</p>
+                    </div>
+                    <div class="col-md-6" data-aos="fade-up" data-aos-delay="100">
+                        <h5><i class="fas fa-chart-bar me-2" style="color: var(--danger-color);"></i>مؤشر القوة النسبية (RSI)</h5>
+                        <p>مؤشر القوة النسبية هو مؤشر زخم يقيس سرعة وتغير حركات الأسعار. يتراوح من 0 إلى 100، وعادة ما تشير القيم فوق 70 إلى حالة ذروة شراء، بينما تشير القيم تحت 30 إلى حالة ذروة بيع.</p>
+                        
+                        <h5 class="mt-4"><i class="fas fa-chart-bar me-2" style="color: var(--info-color);"></i>مؤشر MACD</h5>
+                        <p>مؤشر تقارب وتباعد المتوسطات المتحركة (MACD) هو مؤشر زخم يتبع العلاقة بين متوسطين متحركين للسعر. يتكون من خط MACD (الفرق بين EMA 12 و EMA 26)، وخط الإشارة (EMA 9 لـ MACD)، والمدرج التكراري (الفرق بين MACD وخط الإشارة).</p>
+                        
+                        <h5 class="mt-4"><i class="fas fa-chart-bar me-2" style="color: var(--warning-color);"></i>مؤشر ستوكاستيك</h5>
+                        <p>مؤشر ستوكاستيك هو مؤشر زخم يقارن سعر الإغلاق الحالي بنطاق الأسعار خلال فترة زمنية معينة. يتكون من خطين: %K (الخط الرئيسي) و %D (المتوسط المتحرك لـ %K). القيم فوق 80 تشير إلى حالة ذروة شراء، والقيم تحت 20 تشير إلى حالة ذروة بيع.</p>
+                    </div>
+                </div>
+                
+                <div class="alert alert-warning mt-4">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    <strong>تنبيه:</strong> المؤشرات الفنية هي أدوات مساعدة في تحليل الأسواق وليست ضمانًا للنجاح في التداول. يجب استخدام مجموعة متنوعة من المؤشرات والأدوات التحليلية لاتخاذ قرارات تداول مدروسة. هذه التحليلات للأغراض التعليمية فقط ولا تشكل توصية استثمارية.
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // رسم بياني للمتوسطات المتحركة
+    var maChartData = {{ charts.price_ma|safe }};
+    Plotly.newPlot('ma-chart', maChartData.data, maChartData.layout);
+    
+    // رسم بياني لنطاقات بولينجر
+    var bollingerChartData = {{ charts.bollinger|safe }};
+    Plotly.newPlot('bollinger-chart', bollingerChartData.data, bollingerChartData.layout);
+    
+    // رسم بياني لمؤشر القوة النسبية
+    var rsiChartData = {{ charts.rsi|safe }};
+    Plotly.newPlot('rsi-chart', rsiChartData.data, rsiChartData.layout);
+    
+    // رسم بياني لمؤشر MACD
+    var macdChartData = {{ charts.macd|safe }};
+    Plotly.newPlot('macd-chart', macdChartData.data, macdChartData.layout);
+    
+    // رسم بياني لمؤشر ستوكاستيك
+    var stochasticChartData = {{ charts.stochastic|safe }};
+    Plotly.newPlot('stochastic-chart', stochasticChartData.data, stochasticChartData.layout);
+    
+    // جعل الرسوم البيانية متجاوبة
+    window.addEventListener('resize', function() {
+        Plotly.relayout('ma-chart', {
+            'xaxis.autorange': true,
+            'yaxis.autorange': true
+        });
+        Plotly.relayout('bollinger-chart', {
+            'xaxis.autorange': true,
+            'yaxis.autorange': true
+        });
+        Plotly.relayout('rsi-chart', {
+            'xaxis.autorange': true,
+            'yaxis.autorange': true
+        });
+        Plotly.relayout('macd-chart', {
+            'xaxis.autorange': true,
+            'yaxis.autorange': true
+        });
+        Plotly.relayout('stochastic-chart', {
+            'xaxis.autorange': true,
+            'yaxis.autorange': true
+        });
+    });
+    
+    // تحديث الرسوم البيانية عند تغيير التبويب
+    $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+        window.dispatchEvent(new Event('resize'));
+    });
+</script>
+{% endblock %}

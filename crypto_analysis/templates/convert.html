@@ -1,0 +1,331 @@
+{% extends 'base.html' %}
+
+{% block title %}تحويل العملات{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">الرئيسية</a></li>
+                <li class="breadcrumb-item active">تحويل العملات</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-header bg-success text-white">
+                <h4 class="mb-0"><i class="fas fa-exchange-alt me-2"></i>تحويل العملات</h4>
+            </div>
+            <div class="card-body">
+                <form method="post" class="row g-3" id="convertForm">
+                    <div class="col-md-3">
+                        <label for="amount" class="form-label">المبلغ - عدد العُملات</label>
+                        <input type="number" class="form-control" id="amount" name="amount" min="0.000001" step="0.000001" value="{{ result.amount if result else 1 }}" required>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="from_currency" class="form-label">من</label>
+                        <select class="form-select select2" id="from_currency" name="from_currency" required>
+                            <optgroup label="العملات الرقمية">
+                                {% for symbol, name in currencies.crypto.items() %}
+                                <option value="{{ symbol }}" {% if result and result.from_currency == symbol %}selected{% endif %}>
+                                    {{ name }} ({{ symbol }})
+                                </option>
+                                {% endfor %}
+                            </optgroup>
+                            <optgroup label="العملات التقليدية">
+                                {% for code, name in currencies.fiat.items() %}
+                                <option value="{{ code }}" {% if (result and result.from_currency == code) or (not result and code == 'USD') %}selected{% endif %}>
+                                    {{ name }} ({{ code }})
+                                </option>
+                                {% endfor %}
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="col-md-1 d-flex align-items-end justify-content-center">
+                        <button type="button" id="swap-currencies" class="btn btn-outline-primary mb-3 animate__animated animate__pulse animate__infinite animate__slower">
+                            <i class="fas fa-exchange-alt"></i>
+                        </button>
+                    </div>
+
+                    <div class="col-md-3">
+                        <label for="to_currency" class="form-label">إلى</label>
+                        <select class="form-select select2" id="to_currency" name="to_currency" required>
+                            <optgroup label="العملات الرقمية">
+                                {% for symbol, name in currencies.crypto.items() %}
+                                <option value="{{ symbol }}" {% if result and result.to_currency == symbol %}selected{% endif %}>
+                                    {{ name }} ({{ symbol }})
+                                </option>
+                                {% endfor %}
+                            </optgroup>
+                            <optgroup label="العملات التقليدية">
+                                {% for code, name in currencies.fiat.items() %}
+                                <option value="{{ code }}" {% if (result and result.to_currency == code) or (not result and code == 'USD') %}selected{% endif %}>
+                                    {{ name }} ({{ code }})
+                                </option>
+                                {% endfor %}
+                            </optgroup>
+                        </select>
+                    </div>
+
+                    <div class="col-md-2 d-flex align-items-end">
+                        <button type="submit" class="btn btn-success w-100 mb-3">
+                            <i class="fas fa-exchange-alt me-2"></i>تحويل
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if result %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-header bg-primary text-white">
+                <h4 class="mb-0">نتيجة التحويل</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-5 text-center" data-aos="fade-right">
+                        <div class="p-4 rounded bg-light">
+                            <h3 class="mb-0">{{ "%.8f"|format(result.amount) }}</h3>
+                            <p class="lead mb-0">
+                                {% if result.from_currency in currencies.crypto %}
+                                {{ currencies.crypto[result.from_currency] }} ({{ result.from_currency }})
+                                {% else %}
+                                {{ currencies.fiat[result.from_currency] }} ({{ result.from_currency }})
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    <div class="col-md-2 d-flex align-items-center justify-content-center">
+                        <i class="fas fa-equals fa-2x"></i>
+                    </div>
+                    <div class="col-md-5 text-center" data-aos="fade-left">
+                        <div class="p-4 rounded" style="background-color: rgba(46, 204, 113, 0.1);">
+                            <h3 class="mb-0">{{ "%.8f"|format(result.result) }}</h3>
+                            <p class="lead mb-0">
+                                {% if result.to_currency in currencies.crypto %}
+                                {{ currencies.crypto[result.to_currency] }} ({{ result.to_currency }})
+                                {% else %}
+                                {{ currencies.fiat[result.to_currency] }} ({{ result.to_currency }})
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info mt-4">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <span>سعر الصرف: 1 {{ result.from_currency }} = {{ "%.8f"|format(result.result / result.amount) }} {{ result.to_currency }}</span>
+                        </div>
+                        <div class="col-md-6 text-md-end">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <span>سعر الصرف العكسي: 1 {{ result.to_currency }} = {{ "%.8f"|format(result.amount / result.result) }} {{ result.from_currency }}</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-center mt-4">
+                    <button class="btn btn-outline-primary me-2" id="copyResult">
+                        <i class="fas fa-copy me-1"></i>نسخ النتيجة
+                    </button>
+                    <button class="btn btn-outline-success" id="shareResult">
+                        <i class="fas fa-share-alt me-1"></i>مشاركة
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% if popular_conversions %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-star me-2"></i>تحويلات شائعة لـ {{ result.from_currency }}</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    {% for conversion in popular_conversions %}
+                    <div class="col-md-3 mb-3" data-aos="fade-up" data-aos-delay="{{ loop.index * 100 }}">
+                        <div class="card h-100">
+                            <div class="card-body text-center">
+                                <h5 class="mb-3">{{ conversion.from_currency }} → {{ conversion.to_currency }}</h5>
+                                <p class="mb-0">1 {{ conversion.from_currency }} =</p>
+                                <h4 class="mb-0">{{ "%.8f"|format(conversion.rate) }}</h4>
+                                <p>{{ conversion.to_currency }}</p>
+                                <form method="post" class="mt-3">
+                                    <input type="hidden" name="amount" value="1">
+                                    <input type="hidden" name="from_currency" value="{{ conversion.from_currency }}">
+                                    <input type="hidden" name="to_currency" value="{{ conversion.to_currency }}">
+                                    <button type="submit" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-exchange-alt me-1"></i>تحويل
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endif %}
+{% endif %}
+
+<div class="row">
+    <div class="col-12">
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-header">
+                <h4 class="mb-0"><i class="fas fa-info-circle me-2"></i>معلومات عن أسعار الصرف</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6" data-aos="fade-up">
+                        <h5><i class="fas fa-sync-alt me-2" style="color: var(--primary-color);"></i>أسعار الصرف المحدثة</h5>
+                        <p>أسعار الصرف المستخدمة في التحويل تعتمد على الأسعار الحالية للعملات الرقمية وأسعار صرف العملات التقليدية. يتم تحديث أسعار العملات الرقمية من مصادر موثوقة مثل CoinGecko.</p>
+
+                        <h6 class="mt-3">أسعار صرف العملات التقليدية الرئيسية:</h6>
+                        <div class="table-responsive">
+                            <table class="table table-sm table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>العملة</th>
+                                        <th>سعر الصرف (مقابل الدولار)</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>دولار أمريكي (USD)</td>
+                                        <td>1.00</td>
+                                    </tr>
+                                    <tr>
+                                        <td>يورو (EUR)</td>
+                                        <td>{{ "%.4f"|format(1 / (currencies.fiat.get('EUR', 0.85) |float )) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>ريال سعودي (SAR)</td>
+                                        <td>{{ "%.4f"|format(currencies.fiat.get('SAR', 3.75)) }}</td>
+                                    </tr>
+                                    <tr>
+                                        <td>ريال يمني (YER)</td>
+                                        <td>{{ "%.4f"|format(currencies.fiat.get('YER', 250)) }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                    <div class="col-md-6" data-aos="fade-up" data-aos-delay="100">
+                        <h5><i class="fas fa-exclamation-triangle me-2" style="color: var(--warning-color);"></i>ملاحظات مهمة</h5>
+                        <p>أسعار العملات الرقمية متقلبة للغاية وقد تتغير بسرعة. الأسعار المعروضة هنا تقريبية وقد تختلف عن الأسعار الفعلية في منصات التداول المختلفة.</p>
+
+                        <h6 class="mt-3">أنواع التحويلات المتاحة:</h6>
+                        <ul>
+                            <li><strong>تحويل من عملة رقمية إلى عملة تقليدية:</strong> مثل تحويل البيتكوين إلى دولار أمريكي</li>
+                            <li><strong>تحويل من عملة تقليدية إلى عملة رقمية:</strong> مثل تحويل الدولار الأمريكي إلى إيثريوم</li>
+                            <li><strong>تحويل بين العملات الرقمية المختلفة:</strong> مثل تحويل البيتكوين إلى إيثريوم</li>
+                            <li><strong>تحويل بين العملات التقليدية المختلفة:</strong> مثل تحويل الدولار الأمريكي إلى اليورو</li>
+                        </ul>
+
+                        <div class="alert alert-warning mt-3">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <span>يتم تحديث أسعار الصرف بشكل دوري. آخر تحديث: {{ current_time.strftime('%Y-%m-%d %H:%M') }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // تهيئة Select2
+        $('.select2').select2({
+            dir: "rtl",
+            language: "ar",
+            width: '100%'
+        });
+
+        // تبديل العملات
+        $('#swap-currencies').click(function() {
+            var fromCurrency = $('#from_currency');
+            var toCurrency = $('#to_currency');
+
+            var tempValue = fromCurrency.val();
+            var tempText = fromCurrency.select2('data')[0].text;
+
+            fromCurrency.val(toCurrency.val()).trigger('change');
+            toCurrency.val(tempValue).trigger('change');
+
+            // تحريك زر التبديل
+            $(this).removeClass('animate__pulse animate__infinite animate__slower');
+            $(this).addClass('animate__tada');
+            setTimeout(() => {
+                $(this).removeClass('animate__tada');
+                $(this).addClass('animate__pulse animate__infinite animate__slower');
+            }, 1000);
+        });
+
+        // تم إزالة القيم المسبقة للمبلغ حسب طلب المستخدم
+
+        // نسخ النتيجة
+        $('#copyResult').click(function() {
+            {% if result %}
+            var resultText = "{{ '%.8f'|format(result.result) }} {{ result.to_currency }}";
+            navigator.clipboard.writeText(resultText).then(function() {
+                // تغيير نص الزر مؤقتًا
+                var originalText = $('#copyResult').html();
+                $('#copyResult').html('<i class="fas fa-check me-1"></i>تم النسخ');
+                setTimeout(function() {
+                    $('#copyResult').html(originalText);
+                }, 2000);
+            });
+            {% endif %}
+        });
+
+        // مشاركة النتيجة
+        $('#shareResult').click(function() {
+            {% if result %}
+            var shareText = "تحويل {{ '%.8f'|format(result.amount) }} {{ result.from_currency }} إلى {{ '%.8f'|format(result.result) }} {{ result.to_currency }} - عالم العملات الرقمية";
+            var shareUrl = window.location.href;
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'نتيجة تحويل العملات',
+                    text: shareText,
+                    url: shareUrl
+                }).catch(console.error);
+            } else {
+                // نسخ الرابط إذا كانت المشاركة غير متاحة
+                navigator.clipboard.writeText(shareText + "\n" + shareUrl).then(function() {
+                    // تغيير نص الزر مؤقتًا
+                    var originalText = $('#shareResult').html();
+                    $('#shareResult').html('<i class="fas fa-check me-1"></i>تم نسخ رابط المشاركة');
+                    setTimeout(function() {
+                        $('#shareResult').html(originalText);
+                    }, 2000);
+                });
+            }
+            {% endif %}
+        });
+
+        // تمت إزالة الحاسبة السريعة والسكربتات الخاصة بها
+    });
+</script>
+{% endblock %}
+

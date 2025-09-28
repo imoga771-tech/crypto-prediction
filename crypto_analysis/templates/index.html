@@ -1,0 +1,491 @@
+{% extends 'base.html' %}
+
+{% block title %}عالم العملات الرقمية - الصفحة الرئيسية{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-body text-center py-5">
+                <h1 class="display-4 mb-3" data-aos="fade-up">مرحباً بك في عالم العملات الرقمية</h1>
+                <p class="lead" data-aos="fade-up" data-aos-delay="100">منصة متكاملة لتحليل أسعار العملات الرقمية والتنبؤ بها وتحويلها باستخدام تقنيات الذكاء الاصطناعي والتعلم الآلي</p>
+                <div class="mt-4" data-aos="fade-up" data-aos-delay="200">
+                    <a href="/predict" class="btn btn-primary btn-lg mx-2 mb-2">
+                        <i class="fas fa-chart-line me-2"></i>التنبؤ بالأسعار
+                    </a>
+                    <a href="/convert" class="btn btn-success btn-lg mx-2 mb-2">
+                        <i class="fas fa-exchange-alt me-2"></i>تحويل العملات
+                    </a>
+                    <a href="/compare" class="btn btn-info btn-lg mx-2 mb-2">
+                        <i class="fas fa-balance-scale me-2"></i>مقارنة العملات
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">أسعار العملات الرقمية</h4>
+                <div class="d-flex align-items-center">
+                    <span class="last-updated me-2">آخر تحديث: {{ now.strftime('%Y-%m-%d %H:%M') }}</span>
+                    <div class="dropdown">
+                        <button class="btn btn-sm btn-outline-secondary dropdown-toggle" type="button" id="sortDropdown" data-bs-toggle="dropdown" aria-expanded="false">
+                            <i class="fas fa-sort me-1"></i>ترتيب
+                        </button>
+                        <ul class="dropdown-menu" aria-labelledby="sortDropdown">
+                            <li><a class="dropdown-item sort-option" href="#" data-sort="market_cap">القيمة السوقية</a></li>
+                            <li><a class="dropdown-item sort-option" href="#" data-sort="price_high">السعر (من الأعلى)</a></li>
+                            <li><a class="dropdown-item sort-option" href="#" data-sort="price_low">السعر (من الأقل)</a></li>
+                            <li><a class="dropdown-item sort-option" href="#" data-sort="change_high">التغير (من الأعلى)</a></li>
+                            <li><a class="dropdown-item sort-option" href="#" data-sort="change_low">التغير (من الأقل)</a></li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-responsive">
+                    <table class="table table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>#</th>
+                                <th>العملة</th>
+                                <th>السعر</th>
+                                <th>التغير (24 ساعة)</th>
+                                <th>القيمة السوقية</th>
+                                <th>حجم التداول</th>
+                                <th>إجراءات</th>
+                            </tr>
+                        </thead>
+                        <tbody id="cryptoTableBody">
+                            {% for symbol, crypto in crypto_data.items() %}
+                            <tr class="crypto-row" data-aos="fade-up" data-aos-delay="{{ loop.index * 50 }}" 
+                                data-price="{{ crypto.current_price }}" 
+                                data-change="{{ crypto.price_change }}" 
+                                data-market-cap="{{ crypto.market_cap }}">
+                                <td>{{ loop.index }}</td>
+                                <td>
+                                    <div class="d-flex align-items-center">
+                                        {% if crypto.image %}
+                                        <img src="{{ crypto.image }}" alt="{{ crypto.name }}" class="crypto-logo">
+                                        {% else %}
+                                        <i class="fas fa-coins me-2" style="color: {{ crypto.color }};"></i>
+                                        {% endif %}
+                                        <div>
+                                            <div class="fw-bold">{{ crypto.name }}</div>
+                                            <small class="text-muted">{{ symbol }}</small>
+                                        </div>
+                                    </div>
+                                </td>
+                                <td class="fw-bold">${{ "%.2f"|format(crypto.current_price) }}</td>
+                                <td>
+                                    {% if crypto.price_change > 0 %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-arrow-up me-1"></i>{{ "%.2f"|format(crypto.price_change) }}%
+                                    </span>
+                                    {% elif crypto.price_change < 0 %}
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-arrow-down me-1"></i>{{ "%.2f"|format(crypto.price_change|abs) }}%
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-equals me-1"></i>0.00%
+                                    </span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if crypto.market_cap %}
+                                    ${{ "{:,.0f}".format(crypto.market_cap) }}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if crypto.total_volume %}
+                                    ${{ "{:,.0f}".format(crypto.total_volume) }}
+                                    {% else %}
+                                    -
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <div class="btn-group">
+                                        <a href="/crypto/{{ symbol }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="fas fa-info-circle"></i>
+                                        </a>
+                                        <a href="/technical/{{ symbol }}" class="btn btn-sm btn-outline-success">
+                                            <i class="fas fa-chart-bar"></i>
+                                        </a>
+                                        <a href="/predict?symbol={{ symbol }}" class="btn btn-sm btn-outline-warning">
+                                            <i class="fas fa-chart-line"></i>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card h-100" data-aos="fade-up">
+            <div class="card-header">
+                <h4 class="mb-0">العملات الأكثر تداولاً</h4>
+            </div>
+            <div class="card-body">
+                <div class="row row-cols-2 row-cols-md-4 row-cols-xl-6 g-4">
+                    {% for symbol, crypto in crypto_data.items() %}
+                    {% if loop.index <= 12 %}
+                    <div class="col">
+                        <div class="card crypto-card h-100">
+                            <div class="card-header d-flex justify-content-between align-items-center" style="background-color: {{ crypto.color }};">
+                                <h5 class="mb-0 text-white">{{ crypto.name }}</h5>
+                                <span class="badge bg-light text-dark">{{ symbol }}</span>
+                            </div>
+                            <div class="card-body">
+                                <div class="text-center mb-3">
+                                    {% if crypto.image %}
+                                    <img src="{{ crypto.image }}" alt="{{ crypto.name }}" class="img-fluid" style="max-height: 60px;">
+                                    {% else %}
+                                    <i class="fas fa-coins crypto-icon" style="color: {{ crypto.color }};"></i>
+                                    {% endif %}
+                                </div>
+                                <h3 class="text-center mb-3"><span class="num-anim card-price" data-symbol="{{ symbol }}">${{ "%.2f"|format(crypto.current_price) }}</span></h3>
+                                
+                                <div class="d-flex justify-content-center mb-3">
+                                    {% if crypto.price_change > 0 %}
+                                    <span class="badge bg-success">
+                                        <i class="fas fa-arrow-up me-1"></i>{{ "%.2f"|format(crypto.price_change) }}%
+                                    </span>
+                                    {% elif crypto.price_change < 0 %}
+                                    <span class="badge bg-danger">
+                                        <i class="fas fa-arrow-down me-1"></i>{{ "%.2f"|format(crypto.price_change|abs) }}%
+                                    </span>
+                                    {% else %}
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-equals me-1"></i>0.00%
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                
+                                <div class="d-grid gap-2">
+                                    <a href="/crypto/{{ symbol }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="fas fa-info-circle me-1"></i>التفاصيل
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-md-4 d-none"><!-- تمت إزالة أدوات سريعة حسب طلب المستخدم --></div>
+</div>
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card" data-aos="fade-up">
+            <div class="card-header">
+                <h4 class="mb-0">مميزات المنصة</h4>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3 text-center mb-4" data-aos="fade-up" data-aos-delay="100">
+                        <div class="p-3">
+                            <i class="fas fa-chart-line fa-3x mb-3" style="color: var(--primary-color);"></i>
+                            <h5>تحليل الأسعار</h5>
+                            <p>تحليل شامل لأسعار العملات الرقمية مع رسوم بيانية متقدمة ومؤشرات فنية</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center mb-4" data-aos="fade-up" data-aos-delay="200">
+                        <div class="p-3">
+                            <i class="fas fa-brain fa-3x mb-3" style="color: var(--success-color);"></i>
+                            <h5>التنبؤ بالأسعار</h5>
+                            <p>استخدام نماذج التعلم الآلي المتقدمة للتنبؤ بأسعار العملات المستقبلية بدقة عالية</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center mb-4" data-aos="fade-up" data-aos-delay="300">
+                        <div class="p-3">
+                            <i class="fas fa-exchange-alt fa-3x mb-3" style="color: var(--danger-color);"></i>
+                            <h5>تحويل العملات</h5>
+                            <p>تحويل سهل وسريع بين العملات الرقمية والعملات التقليدية بأسعار صرف محدثة</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center mb-4" data-aos="fade-up" data-aos-delay="400">
+                        <div class="p-3">
+                            <i class="fas fa-balance-scale fa-3x mb-3" style="color: var(--info-color);"></i>
+                            <h5>مقارنة العملات</h5>
+                            <p>مقارنة شاملة بين العملات الرقمية من حيث الأداء والتقلب والارتباط والمخاطر</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mt-3">
+                    <div class="col-md-3 text-center mb-4" data-aos="fade-up" data-aos-delay="500">
+                        <div class="p-3">
+                            <i class="fas fa-chart-bar fa-3x mb-3" style="color: var(--warning-color);"></i>
+                            <h5>المؤشرات الفنية</h5>
+                            <p>تحليل فني متقدم باستخدام مؤشرات مثل RSI وMACD ونطاقات بولينجر وغيرها</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center mb-4" data-aos="fade-up" data-aos-delay="600">
+                        <div class="p-3">
+                            <i class="fas fa-sync-alt fa-3x mb-3" style="color: var(--primary-color);"></i>
+                            <h5>بيانات محدثة</h5>
+                            <p>الحصول على أحدث أسعار العملات الرقمية وأسعار الصرف من مصادر موثوقة</p>
+                            
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center mb-4" data-aos="fade-up" data-aos-delay="700">
+                        <div class="p-3">
+                            <i class="fas fa-chart-line fa-3x mb-3" style="color: var(--success-color);"></i>
+                            <h5>مخططات خاصة بالتداول</h5>
+                            <p>مخططات تفاعلية ملائمة للمتداولين مع تبويبات للشموع والمتوسطات والمؤشرات</p>
+                            
+                        </div>
+                    </div>
+                    <div class="col-md-3 text-center mb-4" data-aos="fade-up" data-aos-delay="800">
+                        <div class="p-3">
+                            <i class="fas fa-swatchbook fa-3x mb-3" style="color: var(--info-color);"></i>
+                            <h5>تصميم عصري وجذاب</h5>
+                            <p>واجهات RTL أنيقة ومتجاوبة مدعومة بـ Bootstrap وواجهات متحركة</p>
+                            
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    $(document).ready(function() {
+        // ترتيب العملات
+        $('.sort-option').click(function(e) {
+            e.preventDefault();
+            const sortType = $(this).data('sort');
+            const rows = $('#cryptoTableBody tr').get();
+            
+            rows.sort(function(a, b) {
+                let aValue, bValue;
+                
+                switch(sortType) {
+                    case 'market_cap':
+                        aValue = parseFloat($(a).data('market-cap')) || 0;
+                        bValue = parseFloat($(b).data('market-cap')) || 0;
+                        return bValue - aValue;
+                    case 'price_high':
+                        aValue = parseFloat($(a).data('price')) || 0;
+                        bValue = parseFloat($(b).data('price')) || 0;
+                        return bValue - aValue;
+                    case 'price_low':
+                        aValue = parseFloat($(a).data('price')) || 0;
+                        bValue = parseFloat($(b).data('price')) || 0;
+                        return aValue - bValue;
+                    case 'change_high':
+                        aValue = parseFloat($(a).data('change')) || 0;
+                        bValue = parseFloat($(b).data('change')) || 0;
+                        return bValue - aValue;
+                    case 'change_low':
+                        aValue = parseFloat($(a).data('change')) || 0;
+                        bValue = parseFloat($(b).data('change')) || 0;
+                        return aValue - bValue;
+                    default:
+                        return 0;
+                }
+            });
+            
+            // إعادة ترتيب الصفوف
+            $.each(rows, function(index, row) {
+                $('#cryptoTableBody').append(row);
+                // تحديث رقم الترتيب
+                $(row).find('td:first').text(index + 1);
+            });
+            
+            // تحديث نص زر الترتيب
+            $('#sortDropdown').text($(this).text());
+        });
+
+        // استقبال الأسعار الحية وتحديث الجدول والبطاقات
+        function formatCurrency(val, digits=2) {
+            return `$${Number(val).toFixed(digits)}`;
+        }
+
+        function numberToDigits(str) {
+            return String(str).split('');
+        }
+
+        function animateDigits($container, newText) {
+            // ensures each character wrapped in span.digit and animates differences
+            const oldText = $container.data('raw') || $container.text();
+            const oldDigits = numberToDigits(oldText);
+            const newDigits = numberToDigits(newText);
+
+            // adjust length by padding left for alignment
+            const maxLen = Math.max(oldDigits.length, newDigits.length);
+            while (oldDigits.length < maxLen) oldDigits.unshift(' ');
+            while (newDigits.length < maxLen) newDigits.unshift(' ');
+
+            // build spans if first time
+            if ($container.children().length === 0 || !$container.hasClass('num-anim')) {
+                $container.addClass('num-anim').empty();
+                oldDigits.forEach(ch => {
+                    const span = $('<span/>').addClass('digit').text(ch);
+                    $container.append(span);
+                });
+            }
+
+            // animate per digit
+            $container.children('.digit').each(function(idx){
+                const $d = $(this);
+                const o = oldDigits[idx];
+                const n = newDigits[idx];
+                if (o === n) return;
+                // set new char and animate
+                $d.text(n);
+                if (!isNaN(parseInt(n)) && !isNaN(parseInt(o))) {
+                    if (Number(n) > Number(o)) {
+                        $d.addClass('up');
+                        setTimeout(()=> $d.removeClass('up'), 350);
+                    } else {
+                        $d.addClass('down');
+                        setTimeout(()=> $d.removeClass('down'), 350);
+                    }
+                }
+            });
+            $container.data('raw', newText);
+        }
+
+        window.addEventListener('pricesFeed', function(ev) {
+            const payload = ev.detail && ev.detail.data ? ev.detail.data : {};
+            const $tbody = $('#cryptoTableBody');
+            $tbody.find('tr.crypto-row').each(function() {
+                const $row = $(this);
+                const symbol = $row.find('td:nth-child(2) small').text().trim();
+                const data = payload[symbol];
+                if (!data) return;
+
+                const oldPrice = parseFloat($row.data('price')) || 0;
+                const newPrice = parseFloat(data.current_price) || 0;
+                const change = parseFloat(data.price_change) || 0;
+                const marketCap = parseFloat(data.market_cap) || 0;
+                const volume = parseFloat(data.total_volume) || 0;
+
+                // تحديث البيانات attributes
+                $row.attr('data-price', newPrice);
+                $row.attr('data-change', change);
+                $row.attr('data-market-cap', marketCap);
+
+                // تحديث الخلايا
+                // السعر (العمود الثالث)
+                const $priceCell = $row.find('td:nth-child(3)');
+                if ($priceCell.find('.num-anim').length === 0) {
+                    const content = $('<span/>').addClass('num-anim table-price');
+                    content.text(`$${oldPrice.toFixed(2)}`);
+                    content.data('raw', `$${oldPrice.toFixed(2)}`);
+                    $priceCell.empty().append(content);
+                }
+                animateDigits($priceCell.find('.num-anim'), `$${newPrice.toFixed(2)}`);
+
+                // التغير (العمود الرابع) كبادج
+                const $changeCell = $row.find('td:nth-child(4)');
+                let badgeHtml = '';
+                if (change > 0) {
+                    badgeHtml = `<span class="badge bg-success"><i class="fas fa-arrow-up me-1"></i>${change.toFixed(2)}%</span>`;
+                } else if (change < 0) {
+                    badgeHtml = `<span class="badge bg-danger"><i class="fas fa-arrow-down me-1"></i>${Math.abs(change).toFixed(2)}%</span>`;
+                } else {
+                    badgeHtml = `<span class="badge bg-secondary"><i class="fas fa-equals me-1"></i>0.00%</span>`;
+                }
+                $changeCell.html(badgeHtml);
+
+                // القيمة السوقية (العمود الخامس)
+                const $mcCell = $row.find('td:nth-child(5)');
+                if (marketCap) {
+                    if ($mcCell.find('.num-anim').length === 0) {
+                        const content = $('<span/>').addClass('num-anim table-mcap');
+                        content.text(`$${Number(marketCap).toLocaleString('en-US', {maximumFractionDigits: 0})}`);
+                        content.data('raw', `$${Number(marketCap).toLocaleString('en-US', {maximumFractionDigits: 0})}`);
+                        $mcCell.empty().append(content);
+                    }
+                    animateDigits($mcCell.find('.num-anim'), `$${Number(marketCap).toLocaleString('en-US', {maximumFractionDigits: 0})}`);
+                } else {
+                    $mcCell.text('-');
+                }
+
+                // حجم التداول (العمود السادس)
+                const $volCell = $row.find('td:nth-child(6)');
+                if (volume) {
+                    if ($volCell.find('.num-anim').length === 0) {
+                        const content = $('<span/>').addClass('num-anim table-vol');
+                        content.text(`$${Number(volume).toLocaleString('en-US', {maximumFractionDigits: 0})}`);
+                        content.data('raw', `$${Number(volume).toLocaleString('en-US', {maximumFractionDigits: 0})}`);
+                        $volCell.empty().append(content);
+                    }
+                    animateDigits($volCell.find('.num-anim'), `$${Number(volume).toLocaleString('en-US', {maximumFractionDigits: 0})}`);
+                } else {
+                    $volCell.text('-');
+                }
+
+                // تأثير بصري عند تغيّر السعر
+                if (newPrice !== oldPrice) {
+                    $row.addClass('price-update');
+                    setTimeout(() => $row.removeClass('price-update'), 1500);
+                }
+            });
+
+            // تحديث بطاقات "الأكثر تداولاً"
+            $('.crypto-card').each(function() {
+                const $card = $(this);
+                const symbol = $card.find('.badge').text().trim();
+                const data = payload[symbol];
+                if (!data) return;
+                const newPrice = parseFloat(data.current_price) || 0;
+                const change = parseFloat(data.price_change) || 0;
+
+                const $priceH3 = $card.find('h3 .card-price');
+                if ($priceH3.length) {
+                    animateDigits($priceH3, `$${newPrice.toFixed(2)}`);
+                }
+
+                const $badgeWrapper = $card.find('.d-flex.justify-content-center .badge');
+                if ($badgeWrapper.length) {
+                    // لا نعدل شارة الرمز هنا
+                }
+
+                const $changeContainer = $card.find('.d-flex.justify-content-center.mb-3');
+                let badgeHtml = '';
+                if (change > 0) {
+                    badgeHtml = `<span class="badge bg-success"><i class=\"fas fa-arrow-up me-1\"></i>${change.toFixed(2)}%</span>`;
+                } else if (change < 0) {
+                    badgeHtml = `<span class="badge bg-danger"><i class=\"fas fa-arrow-down me-1\"></i>${Math.abs(change).toFixed(2)}%</span>`;
+                } else {
+                    badgeHtml = `<span class="badge bg-secondary"><i class=\"fas fa-equals me-1\"></i>0.00%</span>`;
+                }
+                $changeContainer.html(badgeHtml);
+            });
+
+            // تحديث مؤشر آخر تحديث
+            const ts = ev.detail && ev.detail.timestamp ? ev.detail.timestamp : null;
+            if (ts) {
+                const d = new Date(ts);
+                const fmt = d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,'0')+"-"+String(d.getDate()).padStart(2,'0')+" "+String(d.getHours()).padStart(2,'0')+":"+String(d.getMinutes()).padStart(2,'0');
+                $('.last-updated').text(`آخر تحديث: ${fmt}`);
+            }
+        });
+
+        // أزلنا التحديث التلقائي حسب طلب المستخدم
+    });
+</script>
+{% endblock %}

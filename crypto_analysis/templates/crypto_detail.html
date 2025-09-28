@@ -1,0 +1,271 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ crypto.name }} - تفاصيل العملة{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-12">
+        <nav aria-label="breadcrumb">
+            <ol class="breadcrumb">
+                <li class="breadcrumb-item"><a href="/">الرئيسية</a></li>
+                <li class="breadcrumb-item active">{{ crypto.name }}</li>
+            </ol>
+        </nav>
+    </div>
+</div>
+
+<div class="row mb-4">
+    <div class="col-md-4">
+        <div class="card h-100 animate__animated animate__fadeIn">
+            <div class="card-header" style="background-color: {{ crypto.color }};">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h4 class="mb-0 text-white">{{ crypto.name }} ({{ crypto.symbol }})</h4>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="text-center mb-4">
+                    {% if crypto.image %}
+                    <img src="{{ crypto.image }}" alt="{{ crypto.name }}" class="img-fluid mb-3" style="max-height: 80px;">
+                    {% else %}
+                    <i class="fas fa-coins fa-4x mb-3" style="color: {{ crypto.color }};"></i>
+                    {% endif %}
+                    <h2 class="price-update">${{ "%.2f"|format(crypto.current_price) }}</h2>
+                    
+                    <div class="mt-2">
+                        {% if crypto.price_change > 0 %}
+                        <span class="badge bg-success">
+                            <i class="fas fa-arrow-up me-1"></i>{{ "%.2f"|format(crypto.price_change) }}%
+                        </span>
+                        {% elif crypto.price_change < 0 %}
+                        <span class="badge bg-danger">
+                            <i class="fas fa-arrow-down me-1"></i>{{ "%.2f"|format(crypto.price_change|abs) }}%
+                        </span>
+                        {% else %}
+                        <span class="badge bg-secondary">
+                            <i class="fas fa-equals me-1"></i>0.00%
+                        </span>
+                        {% endif %}
+                    </div>
+                    <div class="last-updated mt-2">
+                        آخر تحديث: {{ crypto.last_updated.strftime('%Y-%m-%d %H:%M') if crypto.last_updated is not string else crypto.last_updated }}
+                    </div>
+                </div>
+                
+                <div class="mb-4">
+                    <h5><i class="fas fa-info-circle me-2" style="color: {{ crypto.color }};"></i>نبذة عن العملة</h5>
+                    <p>{{ crypto.description }}</p>
+                </div>
+                
+                <div class="mb-4">
+                    <h5><i class="fas fa-chart-pie me-2" style="color: {{ crypto.color }};"></i>معلومات السوق</h5>
+                    <ul class="list-group">
+                        {% if crypto.market_cap %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            القيمة السوقية
+                            <span>${{ "{:,.0f}".format(crypto.market_cap) }}</span>
+                        </li>
+                        {% endif %}
+                        {% if crypto.total_volume %}
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            حجم التداول (24 ساعة)
+                            <span>${{ "{:,.0f}".format(crypto.total_volume) }}</span>
+                        </li>
+                        {% endif %}
+                    </ul>
+                </div>
+                
+                <div class="mb-4">
+                    <h5><i class="fas fa-exchange-alt me-2" style="color: {{ crypto.color }};"></i>أسعار الصرف</h5>
+                    <ul class="list-group">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            دولار أمريكي (USD)
+                            <span>${{ "%.2f"|format(crypto.current_price) }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            ريال سعودي (SAR)
+                            <span>{{ "%.2f"|format(crypto.current_price * exchange_rates.get('SAR', 3.75)) }} ريال</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            ريال يمني (YER)
+                            <span>{{ "%.2f"|format(crypto.current_price * exchange_rates.get('YER', 250)) }} ريال</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            يورو (EUR)
+                            <span>€{{ "%.2f"|format(crypto.current_price * exchange_rates.get('EUR', 0.85)) }}</span>
+                        </li>
+                    </ul>
+                </div>
+                
+                <div class="d-grid gap-2">
+                    <a href="/predict?symbol={{ crypto.symbol }}" class="btn btn-primary">
+                        <i class="fas fa-chart-line me-2"></i>التنبؤ بالسعر
+                    </a>
+                    <a href="/technical/{{ crypto.symbol }}" class="btn btn-success">
+                        <i class="fas fa-chart-bar me-2"></i>التحليل الفني
+                    </a>
+                    <a href="/convert?from_currency={{ crypto.symbol }}" class="btn btn-info">
+                        <i class="fas fa-exchange-alt me-2"></i>تحويل العملة
+                    </a>
+                    <a href="/compare?symbols={{ crypto.symbol }}" class="btn btn-warning">
+                        <i class="fas fa-balance-scale me-2"></i>مقارنة مع عملات أخرى
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-md-8">
+        <div class="card mb-4 animate__animated animate__fadeIn">
+            <div class="card-header">
+                <ul class="nav nav-tabs card-header-tabs" id="chartTabs" role="tablist">
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link active" id="price-tab" data-bs-toggle="tab" data-bs-target="#price-chart-tab" type="button" role="tab" aria-controls="price-chart-tab" aria-selected="true">
+                            <i class="fas fa-chart-line me-1"></i>السعر التاريخي
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="candle-tab" data-bs-toggle="tab" data-bs-target="#candle-chart-tab" type="button" role="tab" aria-controls="candle-chart-tab" aria-selected="false">
+                            <i class="fas fa-chart-bar me-1"></i>الشموع اليابانية
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="ma-tab" data-bs-toggle="tab" data-bs-target="#ma-chart-tab" type="button" role="tab" aria-controls="ma-chart-tab" aria-selected="false">
+                            <i class="fas fa-chart-area me-1"></i>المتوسطات المتحركة
+                        </button>
+                    </li>
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link" id="bollinger-tab" data-bs-toggle="tab" data-bs-target="#bollinger-chart-tab" type="button" role="tab" aria-controls="bollinger-chart-tab" aria-selected="false">
+                            <i class="fas fa-chart-area me-1"></i>نطاقات بولينجر
+                        </button>
+                    </li>
+                </ul>
+            </div>
+            <div class="card-body">
+                <div class="tab-content" id="chartTabsContent">
+                    <div class="tab-pane fade show active" id="price-chart-tab" role="tabpanel" aria-labelledby="price-tab">
+                        <div id="price-chart" class="chart-container plotly-chart"></div>
+                    </div>
+                    <div class="tab-pane fade" id="candle-chart-tab" role="tabpanel" aria-labelledby="candle-tab">
+                        <div id="candle-chart" class="chart-container plotly-chart"></div>
+                    </div>
+                    <div class="tab-pane fade" id="ma-chart-tab" role="tabpanel" aria-labelledby="ma-tab">
+                        <div id="ma-chart" class="chart-container plotly-chart"></div>
+                    </div>
+                    <div class="tab-pane fade" id="bollinger-chart-tab" role="tabpanel" aria-labelledby="bollinger-tab">
+                        <div id="bollinger-chart" class="chart-container plotly-chart"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="card animate__animated animate__fadeIn">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-table me-1"></i>بيانات الأسعار (آخر 10 أيام)</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead>
+                            <tr>
+                                <th>التاريخ</th>
+                                <th>الافتتاح</th>
+                                <th>الأعلى</th>
+                                <th>الأدنى</th>
+                                <th>الإغلاق</th>
+                                <th>التغير</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in crypto.data.iloc[-10:].itertuples() %}
+                            <tr>
+                                <td>{{ row.date.strftime('%Y-%m-%d') }}</td>
+                                <td>${{ "%.2f"|format(row.open) }}</td>
+                                <td>${{ "%.2f"|format(row.high) }}</td>
+                                <td>${{ "%.2f"|format(row.low) }}</td>
+                                <td>${{ "%.2f"|format(row.close) }}</td>
+                                <td>
+                                    {% set i = loop.index0 %}
+                                    {% if i > 0 %}
+                                        {% set prev_close = crypto.data.iloc[-10 + i - 1].close %}
+                                        {% set change = ((row.close - prev_close) / prev_close * 100) %}
+                                        {% if change > 0 %}
+                                            <span class="text-success">
+                                                <i class="fas fa-arrow-up me-1"></i>{{ "%.2f"|format(change) }}%
+                                            </span>
+                                        {% elif change < 0 %}
+                                            <span class="text-danger">
+                                                <i class="fas fa-arrow-down me-1"></i>{{ "%.2f"|format(change|abs) }}%
+                                            </span>
+                                        {% else %}
+                                            <span class="text-secondary">
+                                                <i class="fas fa-equals me-1"></i>0.00%
+                                            </span>
+                                        {% endif %}
+                                    {% else %}
+                                        -
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // رسم بياني للسعر التاريخي
+    var priceChartData = {{ charts.price_ma|default(candle_chart)|safe }};
+    var plotCfg = {responsive: true, displayModeBar: false};
+    Plotly.newPlot('price-chart', priceChartData.data, priceChartData.layout, plotCfg);
+    
+    // رسم بياني للشموع اليابانية
+    var candleChartData = {{ candle_chart|safe }};
+    Plotly.newPlot('candle-chart', candleChartData.data, candleChartData.layout, plotCfg);
+    
+    // رسم بياني للمتوسطات المتحركة
+    {% if charts.price_ma %}
+    var maChartData = {{ charts.price_ma|safe }};
+    Plotly.newPlot('ma-chart', maChartData.data, maChartData.layout, plotCfg);
+    {% endif %}
+    
+    // رسم بياني لنطاقات بولينجر
+    {% if charts.bollinger %}
+    var bollingerChartData = {{ charts.bollinger|safe }};
+    Plotly.newPlot('bollinger-chart', bollingerChartData.data, bollingerChartData.layout, plotCfg);
+    {% endif %}
+    
+    // جعل الرسوم البيانية متجاوبة
+    window.addEventListener('resize', function() {
+        Plotly.relayout('price-chart', {
+            'xaxis.autorange': true,
+            'yaxis.autorange': true
+        });
+        Plotly.relayout('candle-chart', {
+            'xaxis.autorange': true,
+            'yaxis.autorange': true
+        });
+        {% if charts.price_ma %}
+        Plotly.relayout('ma-chart', {
+            'xaxis.autorange': true,
+            'yaxis.autorange': true
+        });
+        {% endif %}
+        {% if charts.bollinger %}
+        Plotly.relayout('bollinger-chart', {
+            'xaxis.autorange': true,
+            'yaxis.autorange': true
+        });
+        {% endif %}
+    });
+    
+    // تحديث الرسوم البيانية عند تغيير التبويب
+    $('button[data-bs-toggle="tab"]').on('shown.bs.tab', function (e) {
+        window.dispatchEvent(new Event('resize'));
+    });
+</script>
+{% endblock %}

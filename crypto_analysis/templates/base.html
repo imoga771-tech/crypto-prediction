@@ -1,0 +1,641 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}عالم العملات الرقمية{% endblock %}</title>
+    <!-- Bootstrap RTL -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.rtl.min.css">
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts - Cairo -->
+    <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <!-- Plotly.js -->
+    <!-- <script src="https://cdn.plot.ly/plotly-latest.min.js"></script> -->
+    <script src="https://cdn.plot.ly/plotly-3.1.0.min.js"></script>
+    <!-- Select2 -->
+    <link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+    <!-- Animate.css -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css" />
+    <!-- AOS - Animate On Scroll -->
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <!-- Favicon -->
+    <link rel="icon" href="{{ url_for('static', filename='favicon.ico') }}">
+    <style>
+        :root {
+            --primary-color: #3498db;
+            --secondary-color: #2ecc71;
+            --dark-color: #2c3e50;
+            --light-color: #ecf0f1;
+            --danger-color: #e74c3c;
+            --success-color: #27ae60;
+            --warning-color: #f39c12;
+            --info-color: #00cec9;
+            --dark-mode-bg: #1a1a2e;
+            --dark-mode-card: #16213e;
+            --dark-mode-text: #e2e2e2;
+        }
+        
+        body {
+            font-family: 'Cairo', sans-serif;
+            background-color: #f8f9fa;
+            color: #333;
+            transition: all 0.3s ease;
+        }
+        
+        body.dark-mode {
+            background-color: var(--dark-mode-bg);
+            color: var(--dark-mode-text);
+        }
+        
+        .navbar {
+            background-color: var(--dark-color);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+        
+        body.dark-mode .navbar {
+            background-color: #0f3460;
+        }
+        
+        .navbar-brand {
+            font-weight: 700;
+            color: white !important;
+        }
+        
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8) !important;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .nav-link:hover {
+            color: white !important;
+            transform: translateY(-2px);
+        }
+        
+        .nav-link.active {
+            color: white !important;
+            border-bottom: 2px solid var(--primary-color);
+        }
+        
+        .card {
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s;
+            border: none;
+        }
+        
+        body.dark-mode .card {
+            background-color: var(--dark-mode-card);
+            color: var(--dark-mode-text);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+        }
+        
+        .card-header {
+            background-color: var(--dark-color);
+            color: white;
+            font-weight: 600;
+            border-bottom: none;
+            padding: 15px 20px;
+        }
+        
+        body.dark-mode .card-header {
+            background-color: #0f3460;
+        }
+        
+        .card-body {
+            padding: 20px;
+        }
+        
+        .btn {
+            border-radius: 10px;
+            padding: 8px 20px;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+        }
+        
+        .btn-success {
+            background-color: var(--success-color);
+            border-color: var(--success-color);
+        }
+        
+        .btn-danger {
+            background-color: var(--danger-color);
+            border-color: var(--danger-color);
+        }
+        
+        .btn-warning {
+            background-color: var(--warning-color);
+            border-color: var(--warning-color);
+            color: white;
+        }
+        
+        .btn-info {
+            background-color: var(--info-color);
+            border-color: var(--info-color);
+            color: white;
+        }
+        
+        .crypto-card {
+            height: 100%;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .crypto-icon {
+            font-size: 2rem;
+            margin-bottom: 10px;
+        }
+        
+        .crypto-logo {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin-right: 10px;
+        }
+        
+        .price-up {
+            color: var(--success-color);
+        }
+        
+        .price-down {
+            color: var(--danger-color);
+        }
+        
+        .footer {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 30px 0;
+            margin-top: 50px;
+        }
+        
+        body.dark-mode .footer {
+            background-color: #0f3460;
+        }
+        
+        .chart-container {
+            height: 400px;
+            margin: 20px 0;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Dark mode for charts */
+        .plotly-chart {
+            background-color: rgba(0, 0, 0, 0.02);
+            border-radius: 15px;
+            padding: 15px;
+            width: 100%;
+        }
+        
+        body.dark-mode .plotly-chart {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        /* Custom Select2 Styling */
+        .select2-container--default .select2-selection--single,
+        .select2-container--default .select2-selection--multiple {
+            border-radius: 10px;
+            border: 1px solid #ced4da;
+            min-height: 38px;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__rendered {
+            line-height: 38px;
+            padding-right: 20px;
+        }
+        
+        .select2-container--default .select2-selection--single .select2-selection__arrow {
+            height: 36px;
+        }
+        
+        /* Dark Mode Toggle */
+        .dark-mode-toggle {
+            cursor: pointer;
+            padding: 5px 10px;
+            border-radius: 20px;
+            transition: all 0.3s;
+            display: flex;
+            align-items: center;
+            margin-right: 15px;
+        }
+        
+        .dark-mode-toggle i {
+            font-size: 1.2rem;
+            margin-left: 5px;
+        }
+        
+        /* Live Price Update Animation */
+        @keyframes priceUpdate {
+            0% { background-color: rgba(46, 204, 113, 0.2); }
+            100% { background-color: transparent; }
+        }
+        
+        .price-update {
+            animation: priceUpdate 2s ease-out;
+        }
+
+        /* Digit-by-digit animation for numbers */
+        .num-anim { display: inline-block; font-variant-numeric: tabular-nums; }
+        .num-anim .digit { display: inline-block; min-width: 0.6ch; text-align: center; }
+        @keyframes digitUp { from { transform: translateY(0); opacity: 1; } to { transform: translateY(-60%); opacity: 0.2; } }
+        @keyframes digitDown { from { transform: translateY(0); opacity: 1; } to { transform: translateY(60%); opacity: 0.2; } }
+        .digit.up { animation: digitUp 0.35s ease; color: var(--success-color); }
+        .digit.down { animation: digitDown 0.35s ease; color: var(--danger-color); }
+        
+        /* Loading Spinner */
+        .loading-spinner {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: white;
+            animation: spin 1s ease-in-out infinite;
+        }
+        
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        
+        /* Tooltip Styling */
+        .custom-tooltip {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .custom-tooltip .tooltip-text {
+            visibility: hidden;
+            width: 200px;
+            background-color: var(--dark-color);
+            color: white;
+            text-align: center;
+            border-radius: 6px;
+            padding: 10px;
+            position: absolute;
+            z-index: 1;
+            bottom: 125%;
+            left: 50%;
+            transform: translateX(-50%);
+            opacity: 0;
+            transition: opacity 0.3s;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .custom-tooltip:hover .tooltip-text {
+            visibility: visible;
+            opacity: 1;
+        }
+        
+        /* Technical Analysis Indicators */
+        .indicator {
+            padding: 15px;
+            border-radius: 10px;
+            margin-bottom: 15px;
+            transition: all 0.3s;
+        }
+        
+        .indicator-buy {
+            background-color: rgba(46, 204, 113, 0.1);
+            border-left: 4px solid var(--success-color);
+        }
+        
+        .indicator-sell {
+            background-color: rgba(231, 76, 60, 0.1);
+            border-left: 4px solid var(--danger-color);
+        }
+        
+        .indicator-neutral {
+            background-color: rgba(52, 152, 219, 0.1);
+            border-left: 4px solid var(--primary-color);
+        }
+        
+        /* Progress Bar Styling */
+        .progress {
+            height: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+        }
+        
+        /* Comparison Table */
+        .comparison-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            border-radius: 15px;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+        }
+        
+        .comparison-table th {
+            background-color: var(--dark-color);
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+        
+        body.dark-mode .comparison-table th {
+            background-color: #0f3460;
+        }
+        
+        .comparison-table td {
+            padding: 12px 15px;
+            text-align: center;
+            border-bottom: 1px solid #eee;
+        }
+        
+        body.dark-mode .comparison-table td {
+            border-bottom: 1px solid #2c3e50;
+        }
+        
+        .comparison-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .comparison-table tr:nth-child(even) {
+            background-color: rgba(0, 0, 0, 0.02);
+        }
+        
+        body.dark-mode .comparison-table tr:nth-child(even) {
+            background-color: rgba(255, 255, 255, 0.05);
+        }
+        
+        /* Accessibility and Dark/Light contrast improvements */
+        body.dark-mode .text-muted {
+            color: #cbd5e1 !important; /* improve contrast in dark mode */
+        }
+        body.dark-mode a {
+            color: #93c5fd;
+        }
+        body.dark-mode a:hover {
+            color: #bfdbfe;
+        }
+        body.dark-mode .badge.bg-light {
+            background-color: #e2e8f0 !important;
+            color: #111827 !important;
+        }
+        body.dark-mode .badge.bg-secondary {
+            background-color: #475569 !important;
+            color: #e5e7eb !important;
+        }
+        body.dark-mode .table-hover tbody tr:hover {
+            background-color: rgba(255,255,255,0.05);
+        }
+        body.dark-mode table.table thead th {
+            color: #e2e8f0;
+            background-color: #0f3460;
+        }
+        body.dark-mode table.table tbody td {
+            color: #e5e7eb;
+        }
+        .chart-container {
+            width: 100%;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 992px) {
+            .chart-container {
+                height: 320px;
+            }
+        }
+        @media (max-width: 768px) {
+            .chart-container {
+                height: 280px;
+            }
+            
+            .navbar-brand {
+                font-size: 1.2rem;
+            }
+            
+            .card-body {
+                padding: 15px;
+            }
+            
+            .comparison-table th,
+            .comparison-table td {
+                padding: 10px;
+            }
+        }
+        
+        /* Notification Badge */
+        .notification-badge {
+            position: absolute;
+            top: -5px;
+            right: -5px;
+            background-color: var(--danger-color);
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+        
+        /* Last Updated Indicator */
+        .last-updated {
+            font-size: 0.8rem;
+            color: #6c757d;
+            margin-top: 5px;
+        }
+        
+        body.dark-mode .last-updated {
+            color: #a0a0a0;
+        }
+        
+        /* Refresh Button Animation */
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        
+        .refresh-icon.rotating {
+            animation: rotate 1s linear infinite;
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body>
+    <!-- Navbar -->
+    <nav class="navbar navbar-expand-lg navbar-dark sticky-top mb-4">
+        <div class="container">
+            <a class="navbar-brand" href="/">
+                <i class="fas fa-coins me-2"></i>عالم العملات الرقمية
+            </a>
+            <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarNav">
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.path == '/' %}active{% endif %}" href="/">
+                            <i class="fas fa-home me-1"></i>الرئيسية
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/predict' in request.path %}active{% endif %}" href="/predict">
+                            <i class="fas fa-chart-line me-1"></i>التنبؤ بالأسعار
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/convert' in request.path %}active{% endif %}" href="/convert">
+                            <i class="fas fa-exchange-alt me-1"></i>تحويل العملات
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/compare' in request.path %}active{% endif %}" href="/compare">
+                            <i class="fas fa-balance-scale me-1"></i>مقارنة العملات
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link {% if '/details' in request.path %}active{% endif %}" href="/details">
+                            <i class="fas fa-info-circle me-1"></i>تفاصيل
+                        </a>
+                    </li>
+                </ul>
+                <div class="d-flex align-items-center">
+                    <button class="btn btn-sm btn-outline-light ms-2" id="refreshPrices">
+                        <i class="fas fa-sync-alt refresh-icon"></i>
+                        <span class="d-none d-md-inline me-1">تحديث الأسعار</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <div class="container">
+        {% if error %}
+        <div class="alert alert-danger alert-dismissible fade show animate__animated animate__fadeIn" role="alert">
+            <i class="fas fa-exclamation-triangle me-2"></i>{{ error }}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+        {% endif %}
+        
+        {% block content %}{% endblock %}
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5><i class="fas fa-coins me-2"></i>عالم العملات الرقمية</h5>
+                    <p class="mt-3">منصة متكاملة لتحليل أسعار العملات الرقمية والتنبؤ بها وتحويلها باستخدام تقنيات التعلم الآلي والمؤشرات الفنية المتقدمة.</p>
+                </div>
+                <div class="col-md-4 mb-4 mb-md-0">
+                    <h5><i class="fas fa-link me-2"></i>روابط سريعة</h5>
+                    <ul class="list-unstyled mt-3">
+                        <li class="mb-2"><a href="/" class="text-white text-decoration-none"><i class="fas fa-angle-left me-2"></i>الصفحة الرئيسية</a></li>
+                        <li class="mb-2"><a href="/predict" class="text-white text-decoration-none"><i class="fas fa-angle-left me-2"></i>التنبؤ بالأسعار</a></li>
+                        <li class="mb-2"><a href="/convert" class="text-white text-decoration-none"><i class="fas fa-angle-left me-2"></i>تحويل العملات</a></li>
+                        <li><a href="/compare" class="text-white text-decoration-none"><i class="fas fa-angle-left me-2"></i>مقارنة العملات</a></li>
+                        <li><a href="/details" class="text-white text-decoration-none"><i class="fas fa-angle-left me-2"></i>تفاصيل</a></li>
+                    </ul>
+                </div>
+                <div class="col-md-4">
+                    <h5><i class="fas fa-info-circle me-2"></i>معلومات</h5>
+                    <p class="mt-3">هذا التطبيق مخصص للأغراض التعليمية فقط. لا ينبغي استخدام التنبؤات والتحليلات المقدمة لاتخاذ قرارات استثمارية.</p>
+                    <p>يتم تحديث أسعار العملات الرقمية من مصادر خارجية موثوقة.</p>
+                </div>
+            </div>
+            <hr class="mt-4 mb-4" style="border-color: rgba(255, 255, 255, 0.1);">
+            <div class="text-center">
+                <p class="mb-0">عالم العملات الرقمية - جميع الحقوق محفوظة 2025</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- jQuery -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <!-- Bootstrap JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Select2 -->
+    <script src="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/js/select2.min.js"></script>
+    <!-- AOS - Animate On Scroll -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    
+    <script>
+        // تهيئة AOS
+        AOS.init({
+            duration: 800,
+            once: true
+        });
+        
+        // تهيئة Select2
+        $(document).ready(function() {
+            $('.select2').select2({
+                dir: "rtl",
+                language: "ar"
+            });
+            
+            // تم إزالة التبديل بين الوضعين بالكامل
+            
+            // تحديث أسعار العملات - يعود للسلوك الأساسي: إشعار ثم إعادة تحميل
+            $('#refreshPrices').click(function() {
+                const refreshIcon = $('.refresh-icon');
+                refreshIcon.addClass('rotating');
+
+                $.ajax({
+                    url: '/update_prices',
+                    type: 'GET',
+                    success: function(response) {
+                        if (response.success) {
+                            const alertHtml = `
+                                <div class="alert alert-success alert-dismissible fade show animate__animated animate__fadeIn" role="alert">
+                                    <i class="fas fa-check-circle me-2"></i>${response.message}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            `;
+                            $('.container').prepend(alertHtml);
+                            setTimeout(function() { location.reload(); }, 2000);
+                        } else {
+                            const alertHtml = `
+                                <div class="alert alert-danger alert-dismissible fade show animate__animated animate__fadeIn" role="alert">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>${response.message}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            `;
+                            $('.container').prepend(alertHtml);
+                        }
+                        refreshIcon.removeClass('rotating');
+                    },
+                    error: function() {
+                        const alertHtml = `
+                            <div class="alert alert-danger alert-dismissible fade show animate__animated animate__fadeIn" role="alert">
+                                <i class="fas fa-exclamation-triangle me-2"></i>حدث خطأ أثناء تحديث الأسعار
+                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                            </div>
+                        `;
+                        $('.container').prepend(alertHtml);
+                        refreshIcon.removeClass('rotating');
+                    }
+                });
+            });
+        });
+    </script>
+    
+    {% block scripts %}{% endblock %}
+</body>
+</html>
